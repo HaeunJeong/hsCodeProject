@@ -1,13 +1,10 @@
-from .product import Product
-from .dictionary import Dictionary
+
 from .access_code import AccessCode
 from sqlalchemy import Column, String, Boolean, DateTime, Integer
 from sqlalchemy.sql import func
 from ..database import Base
 
 __all__ = [
-    "Product",
-    "Dictionary",
     "AccessCode"
 ]
 
