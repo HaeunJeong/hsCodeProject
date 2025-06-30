@@ -62,7 +62,7 @@ def update_account(account_id: int, account: AccountUpdate, db: Session = Depend
     db.refresh(db_account)
     return db_account
 
-@router.delete("/{account_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{account_id}")
 def delete_account(account_id: int, db: Session = Depends(get_db)):
     """계정 삭제"""
     db_account = db.query(Account).filter(Account.id == account_id).first()
@@ -71,4 +71,4 @@ def delete_account(account_id: int, db: Session = Depends(get_db)):
     
     db.delete(db_account)
     db.commit()
-    return None 
+    return {"message": "계정이 삭제되었습니다"} 

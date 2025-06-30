@@ -52,48 +52,41 @@ def init_material_classifications(db: Session):
     db.commit()
 
 def init_standard_categories(db: Session):
-    """표준 카테고리 초기 데이터"""
+    """표준 카테고리 초기 데이터 - 엑셀 파일 기반 37개 카테고리"""
     categories = [
-        # 상의
-        {"item_name": "티셔츠", "standard_category": "상의"},
-        {"item_name": "셔츠", "standard_category": "상의"},
-        {"item_name": "블라우스", "standard_category": "상의"},
-        {"item_name": "탑", "standard_category": "상의"},
-        {"item_name": "자켓", "standard_category": "상의"},
-        {"item_name": "코트", "standard_category": "상의"},
-        {"item_name": "가디건", "standard_category": "상의"},
-        {"item_name": "스웨터", "standard_category": "상의"},
-        {"item_name": "후드", "standard_category": "상의"},
-        {"item_name": "후디", "standard_category": "상의"},
-        
-        # 하의
-        {"item_name": "바지", "standard_category": "하의"},
-        {"item_name": "팬츠", "standard_category": "하의"},
-        {"item_name": "진", "standard_category": "하의"},
-        {"item_name": "청바지", "standard_category": "하의"},
-        {"item_name": "반바지", "standard_category": "하의"},
-        {"item_name": "숏팬츠", "standard_category": "하의"},
-        {"item_name": "스커트", "standard_category": "하의"},
-        {"item_name": "치마", "standard_category": "하의"},
-        {"item_name": "레깅스", "standard_category": "하의"},
-        
-        # 원피스
-        {"item_name": "원피스", "standard_category": "원피스"},
-        {"item_name": "드레스", "standard_category": "원피스"},
-        {"item_name": "점프수트", "standard_category": "원피스"},
-        {"item_name": "올인원", "standard_category": "원피스"},
-        
-        # 속옷
-        {"item_name": "브라", "standard_category": "속옷"},
-        {"item_name": "팬티", "standard_category": "속옷"},
-        {"item_name": "런닝", "standard_category": "속옷"},
-        {"item_name": "속바지", "standard_category": "속옷"},
-        {"item_name": "언더웨어", "standard_category": "속옷"},
+        {"category_code": "CAT001", "category_name_en": "accessories", "category_name_ko": "액세서리", "description": "accessories", "keywords": "액세서리, ACC"},
+        {"category_code": "CAT002", "category_name_en": "active_top", "category_name_ko": "활성 상의", "description": "active, top, sports, athletic, workout, exercise", "keywords": "활동적 상의"},
+        {"category_code": "CAT003", "category_name_en": "active_wear", "category_name_ko": "활성복", "description": "activewear, sportswear, athletic_wear, workout_clothes", "keywords": "활동복"},
+        {"category_code": "CAT004", "category_name_en": "babies_accessories", "category_name_ko": "유아 액세서리", "description": "babies_accessories", "keywords": "유아용 액세서리"},
+        {"category_code": "CAT005", "category_name_en": "babies_garments", "category_name_ko": "유아복", "description": "babies_garments", "keywords": "유아용 의류"},
+        {"category_code": "CAT006", "category_name_en": "underwear_accessory", "category_name_ko": "속옷 액세서리", "description": "bras, suspender, garter", "keywords": "속옷 관련 액세서리"},
+        {"category_code": "CAT007", "category_name_en": "brasseries", "category_name_ko": "브래지어", "description": "brasseries", "keywords": "브래지어"},
+        {"category_code": "CAT008", "category_name_en": "cardigans", "category_name_ko": "가디건", "description": "cardigan, knitwear, pullover", "keywords": "가디건, 카디건"},
+        {"category_code": "CAT009", "category_name_en": "compression_hosiery", "category_name_ko": "압축 스타킹", "description": "compression_hosiery", "keywords": "압축 스타킹"},
+        {"category_code": "CAT010", "category_name_en": "corsetrie", "category_name_ko": "코르셋", "description": "corsetrie", "keywords": "코르셋"},
+        {"category_code": "CAT011", "category_name_en": "dresses", "category_name_ko": "드레스", "description": "dresses", "keywords": "드레스"},
+        {"category_code": "CAT012", "category_name_en": "ensembles", "category_name_ko": "앙상블", "description": "ensembles", "keywords": "앙상블"},
+        {"category_code": "CAT013", "category_name_en": "garments", "category_name_ko": "의류", "description": "garments, clothing, apparel", "keywords": "일반 의류"},
+        {"category_code": "CAT014", "category_name_en": "gloves", "category_name_ko": "장갑", "description": "gloves", "keywords": "장갑"},
+        {"category_code": "CAT015", "category_name_en": "handkerchiefs", "category_name_ko": "손수건", "description": "handkerchiefs", "keywords": "손수건"},
+        {"category_code": "CAT016", "category_name_en": "jackets", "category_name_ko": "재킷", "description": "jackets, blazers", "keywords": "재킷"},
+        {"category_code": "CAT017", "category_name_en": "knit_layer", "category_name_ko": "니트 레이어", "description": "jersey, pullover, cardigan, waistcoat", "keywords": "니트 레이어드 의류"},
+        {"category_code": "CAT018", "category_name_en": "knitwear", "category_name_ko": "니트웨어", "description": "knitwear, knitted, sweater, jumper", "keywords": "니트웨어, 편직물"},
+        {"category_code": "CAT019", "category_name_en": "sleepwear", "category_name_ko": "잠옷", "description": "nightdresses, nightshirts, pyjamas", "keywords": "잠옷"},
+        {"category_code": "CAT020", "category_name_en": "pantyhose", "category_name_ko": "팬티스타킹", "description": "panty, hose, tights", "keywords": "팬티스타킹"},
+        {"category_code": "CAT021", "category_name_en": "pants", "category_name_ko": "바지", "description": "pants", "keywords": "바지류"},
+        {"category_code": "CAT022", "category_name_en": "wrap_accessory", "category_name_ko": "스카프 액세서리", "description": "shawl, scarves, mufflers, mantillas, veils", "keywords": "스카프 등 감싸는 액세서리"},
+        {"category_code": "CAT023", "category_name_en": "shirt_top", "category_name_ko": "셔츠 상의", "description": "shirts, blouses", "keywords": "셔츠 상의"},
+        {"category_code": "CAT024", "category_name_en": "shorts", "category_name_ko": "반바지", "description": "shorts, vest", "keywords": "반바지"},
+        {"category_code": "CAT025", "category_name_en": "ski_suits", "category_name_ko": "스키복", "description": "ski_suits", "keywords": "스키복"},
+        {"category_code": "CAT026", "category_name_en": "skirts", "category_name_ko": "스커트", "description": "skirts", "keywords": "스커트"},
+        {"category_code": "CAT027", "category_name_en": "sleepwear", "category_name_ko": "잠옷", "description": "slips, petticoats", "keywords": "잠옷, 페티코트"},
+        {"category_code": "CAT028", "category_name_en": "sports_uniforms", "category_name_ko": "스포츠 유니폼", "description": "sports_uniforms", "keywords": "스포츠 유니폼"}
     ]
     
     for category_data in categories:
         existing = db.query(StandardCategory).filter(
-            StandardCategory.item_name == category_data["item_name"]
+            StandardCategory.category_code == category_data["category_code"]
         ).first()
         
         if not existing:

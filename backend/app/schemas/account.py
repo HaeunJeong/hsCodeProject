@@ -4,10 +4,12 @@ from datetime import datetime
 
 class AccountBase(BaseModel):
     name: str
+    code: str      # 계정코드
     role: str = "client"  # "admin" 또는 "client"
+    isActive: bool = True
 
 class AccountCreate(AccountBase):
-    code: str  # 수동 입력받는 코드
+    pass
 
 class AccountUpdate(BaseModel):
     name: Optional[str] = None
@@ -17,8 +19,6 @@ class AccountUpdate(BaseModel):
 
 class AccountResponse(AccountBase):
     id: int
-    code: str
-    isActive: bool
     createdAt: datetime
     updatedAt: Optional[datetime] = None
 
