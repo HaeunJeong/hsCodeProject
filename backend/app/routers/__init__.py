@@ -1,6 +1,6 @@
 """
 API 라우터 모듈
 """
-from . import accounts, templates
+from . import accounts
 
-__all__ = ["accounts", "templates"] 
+__all__ = ["accounts"] 

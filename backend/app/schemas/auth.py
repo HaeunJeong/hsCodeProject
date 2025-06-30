@@ -1,18 +1,11 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+from typing import Optional
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
-class UserBase(BaseModel):
-    email: EmailStr
-    is_admin: bool = False
-
-class UserCreate(UserBase):
-    password: str
-
-class User(UserBase):
-    id: int
-    
-    class Config:
-        from_attributes = True  # Pydantic v2에서는 orm_mode 대신 from_attributes 사용 
+class AccessCodeCreate(BaseModel):
+    code: str
+    role: str
+    expiresAt: Optional[str] = None 

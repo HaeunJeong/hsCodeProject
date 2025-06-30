@@ -4,21 +4,23 @@ from datetime import datetime
 
 class AccountBase(BaseModel):
     name: str
-    isActive: bool = True
+    role: str = "client"  # "admin" 또는 "client"
 
 class AccountCreate(AccountBase):
-    pass
+    code: str  # 수동 입력받는 코드
 
-class AccountUpdate(AccountBase):
+class AccountUpdate(BaseModel):
     name: Optional[str] = None
+    code: Optional[str] = None
+    role: Optional[str] = None
     isActive: Optional[bool] = None
 
 class AccountResponse(AccountBase):
     id: int
     code: str
+    isActive: bool
     createdAt: datetime
     updatedAt: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
-        orm_mode = True 
+        from_attributes = True 

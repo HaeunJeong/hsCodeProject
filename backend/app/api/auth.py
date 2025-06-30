@@ -8,20 +8,18 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import create_access_token, verify_password
 from app.core.database import get_db
-from app.models.user import User
-from app.models.access_code import AccessCode
 from app.models import Account
-from app.schemas import Token, UserCreate, User as UserSchema
+from app.schemas import Token, AccessCodeCreate
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 ADMIN_CODE = "admin123"
 
-def get_current_user(
+def get_current_account(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
-) -> User:
+) -> Account:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -31,32 +29,16 @@ def get_current_user(
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
-        email: str = payload.get("sub")
-        if email is None:
+        code: str = payload.get("sub")
+        if code is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
     
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
+    account = db.query(Account).filter(Account.code == code).first()
+    if account is None:
         raise credentials_exception
-    return user
-
-@router.post("/token", response_model=Token)
-async def login_for_access_token(
-    db: Session = Depends(get_db),
-    form_data: OAuth2PasswordRequestForm = Depends()
-) -> Any:
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    access_token = create_access_token(subject=user.email)
-    return {"access_token": access_token, "token_type": "bearer"}
+    return account
 
 @router.post("/validate")
 async def validate_access_code(
@@ -105,95 +87,9 @@ async def validate_access_code(
         "success": True,
         "data": {
             "accessCode": code,
-            "role": "user",
+            "role": account.role,
             "access_token": create_access_token(subject=code),
             "token_type": "bearer",
             "expiresAt": (datetime.now() + timedelta(days=1)).isoformat()
         }
     }
-
-@router.get("/codes")
-async def get_access_codes(
-    db: Session = Depends(get_db),
-) -> Any:
-    """
-    Get all access codes (admin only)
-    """
-    codes = db.query(AccessCode).all()
-    return {
-        "success": True,
-        "data": codes
-    }
-
-@router.post("/codes")
-async def create_access_code(
-    *,
-    db: Session = Depends(get_db),
-    code: str = Body(...),
-    role: str = Body(...),
-    expires_at: str = Body(None)
-) -> Any:
-    """
-    Create new access code (admin only)
-    """
-    db_code = AccessCode(
-        code=code,
-        role=role,
-        expires_at=datetime.fromisoformat(expires_at) if expires_at else None
-    )
-    db.add(db_code)
-    db.commit()
-    db.refresh(db_code)
-    
-    return {
-        "success": True,
-        "data": db_code
-    }
-
-@router.post("/deactivate")
-async def deactivate_access_code(
-    *,
-    db: Session = Depends(get_db),
-    code: str = Body(..., embed=True)
-) -> Any:
-    """
-    Deactivate access code (admin only)
-    """
-    db_code = db.query(AccessCode).filter(AccessCode.code == code).first()
-    if not db_code:
-        raise HTTPException(status_code=404, detail="Access code not found")
-    
-    db_code.is_active = False
-    db.commit()
-    
-    return {
-        "success": True,
-        "data": True
-    }
-
-@router.post("/register", response_model=UserSchema)
-def register_user(
-    *,
-    db: Session = Depends(get_db),
-    user_in: UserCreate,
-) -> Any:
-    """
-    Create new user.
-    """
-    user = db.query(User).filter(User.email == user_in.email).first()
-    if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system.",
-        )
-    
-    from app.core.security import get_password_hash
-    user = User(
-        email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
-        is_admin=False,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user 

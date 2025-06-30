@@ -4,21 +4,21 @@ from typing import List
 from ..models import Account
 from ..schemas.account import AccountCreate, AccountUpdate, AccountResponse
 from ..database import get_db
-from .. import utils
 
 router = APIRouter()
 
 @router.post("/", response_model=AccountResponse)
 def create_account(account: AccountCreate, db: Session = Depends(get_db)):
     """새 계정 생성"""
-    # 계정 코드 생성
-    while True:
-        code = utils.generate_account_code()
-        existing = db.query(Account).filter(Account.code == code).first()
-        if not existing:
-            break
+    # 코드 중복 검증
+    existing_code = db.query(Account).filter(Account.code == account.code).first()
+    if existing_code:
+        raise HTTPException(
+            status_code=400, 
+            detail="이미 존재하는 계정 코드입니다. 다른 코드를 사용해주세요."
+        )
     
-    db_account = Account(**account.dict(), code=code)
+    db_account = Account(**account.model_dump())
     db.add(db_account)
     db.commit()
     db.refresh(db_account)
@@ -45,7 +45,16 @@ def update_account(account_id: int, account: AccountUpdate, db: Session = Depend
     if db_account is None:
         raise HTTPException(status_code=404, detail="계정을 찾을 수 없습니다")
     
-    update_data = account.dict(exclude_unset=True)
+    # 코드를 변경하는 경우 중복 검증
+    if account.code and account.code != db_account.code:
+        existing_code = db.query(Account).filter(Account.code == account.code).first()
+        if existing_code:
+            raise HTTPException(
+                status_code=400, 
+                detail="이미 존재하는 계정 코드입니다. 다른 코드를 사용해주세요."
+            )
+    
+    update_data = account.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_account, key, value)
     

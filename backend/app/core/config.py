@@ -18,14 +18,8 @@ class Settings(BaseSettings):
     # CORS 설정
     BACKEND_CORS_ORIGINS: List[str] = os.getenv("BACKEND_CORS_ORIGINS", '["http://localhost:3000", "http://localhost:5173"]').strip('[]').replace('"', '').split(',')
     
-    # 데이터베이스 설정
-    POSTGRES_SERVER: str = os.getenv("POSTGRES_SERVER", "localhost")
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "password")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "excel_db")
-    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
-    
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    # 데이터베이스 설정 - SQLite 사용
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{Path(__file__).parent.parent.parent}/sql_app.db")
     
     # 임시 파일 저장 경로
     TEMP_DIR: str = os.path.join(Path(__file__).parent.parent.parent, "temp")

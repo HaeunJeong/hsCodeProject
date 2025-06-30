@@ -1,5 +1,5 @@
-from .access_code_service import AccessCodeService
+from .hs_code_service import HsCodeService
 
 __all__ = [
-    "AccessCodeService"
+    "HsCodeService" 
 ] 

@@ -3,13 +3,12 @@
 """
 
 from .account import AccountCreate, AccountUpdate, AccountResponse as Account
-from .auth import Token, UserCreate, User
+from .auth import Token, AccessCodeCreate
 
 __all__ = [
     "AccountCreate",
     "AccountUpdate",
     "Account",
     "Token",
-    "UserCreate",
-    "User"
+    "AccessCodeCreate"
 ] 
