@@ -21,6 +21,16 @@ def update_standard_category(category_id: int, category: StandardCategoryUpdate,
         raise HTTPException(status_code=404, detail="카테고리를 찾을 수 없습니다")
     
     update_data = category.model_dump(exclude_unset=True)
+    
+    # keywords 필드의 개행문자를 쉼표로 변환하고 공백 제거
+    if 'keywords' in update_data and update_data['keywords']:
+        keywords = update_data['keywords']
+        # 개행문자를 쉼표로 변환
+        keywords = keywords.replace('\n', ',')
+        # 쉼표로 분리하여 각 단어의 앞뒤 공백 제거 후 다시 결합
+        keywords_list = [keyword.strip() for keyword in keywords.split(',') if keyword.strip()]
+        update_data['keywords'] = ', '.join(keywords_list)
+    
     for key, value in update_data.items():
         setattr(db_category, key, value)
     
