@@ -1,9 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
-import { IProduct } from '../types/product';
 import { IApiResponse } from '../types/account';
-import { IMappingRule } from '../types/mapping';
-import { IExcelData } from '../types/excel';
 import { IAccount, IAccountCreateData, IAccountUpdateData, IStandardCategory, IStandardCategoryUpdateData } from '../types/account';
+import { IFabricComponent, IFabricComponentCreateData, IFabricComponentUpdateData, ICategoryInfo } from '../types/fabric';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -38,71 +36,9 @@ api.interceptors.response.use(
     }
 );
 
-// 엑셀 파일 업로드
-export const uploadExcelFile = async (file: File): Promise<IApiResponse<IProduct[]>> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await api.post<IApiResponse<IProduct[]>>('/excel/upload', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return response.data;
-};
 
-// 매핑 룰 관련 API
-export const mappingRuleApi = {
-    getRules: async (category?: string): Promise<IApiResponse<IMappingRule[]>> => {
-        const response = await api.get<IApiResponse<IMappingRule[]>>('/mapping-rules', {
-            params: { category },
-        });
-        return response.data;
-    },
 
-    createRule: async (rule: Omit<IMappingRule, 'id'>): Promise<IApiResponse<IMappingRule>> => {
-        const response = await api.post<IApiResponse<IMappingRule>>('/mapping-rules', rule);
-        return response.data;
-    },
 
-    updateRule: async (id: number, rule: Partial<IMappingRule>): Promise<IApiResponse<IMappingRule>> => {
-        const response = await api.put<IApiResponse<IMappingRule>>(`/mapping-rules/${id}`, rule);
-        return response.data;
-    },
-
-    deleteRule: async (id: number): Promise<IApiResponse<void>> => {
-        const response = await api.delete<IApiResponse<void>>(`/mapping-rules/${id}`);
-        return response.data;
-    },
-
-    uploadExcel: async (formData: FormData): Promise<IApiResponse<IExcelData[]>> => {
-        const response = await api.post('/excel/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        });
-        return response.data;
-    },
-
-    exportExcel: async (data: IExcelData[]): Promise<Blob> => {
-        const response = await api.post('/excel/export', data, {
-            responseType: 'blob',
-        });
-        return response.data;
-    },
-
-    downloadTemplate: async (): Promise<Blob> => {
-        const response = await api.get('/excel/template', {
-            responseType: 'blob',
-        });
-        return response.data;
-    },
-
-    mapHsCodes: async (data: IExcelData[]): Promise<IApiResponse<IExcelData[]>> => {
-        const response = await api.post<IApiResponse<IExcelData[]>>('/excel/map-hs-codes', data);
-        return response.data;
-    },
-};
 
 // API 래퍼 함수들
 const apiWrapper = {
@@ -257,31 +193,7 @@ export const accountApi = {
   },
 };
 
-export const templateApi = {
-  async download() {
-    const response = await fetch('/api/templates/download');
-    if (!response.ok) {
-      throw new Error('템플릿 다운로드에 실패했습니다.');
-    }
-    return response;
-  },
 
-  async upload(file: File) {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch('/api/templates/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('템플릿 업로드에 실패했습니다.');
-    }
-
-    return response.json();
-  },
-};
 
 // StandardCategory 관련 API
 export const standardCategoryApi = {
@@ -293,6 +205,66 @@ export const standardCategoryApi = {
     updateCategory: async (id: number, data: IStandardCategoryUpdateData): Promise<IStandardCategory> => {
         const response = await api.put<IStandardCategory>(`/api/v1/categories/${id}`, data);
         return response.data;
+    }
+};
+
+// FabricComponent 관련 API
+export const fabricComponentApi = {
+    getComponents: async (params?: {
+        major_category_code?: string;
+        minor_category_code?: string;
+        component_name_en?: string;
+        component_name_ko?: string;
+    }): Promise<IFabricComponent[]> => {
+        const queryParams = new URLSearchParams();
+        if (params?.major_category_code && params.major_category_code !== 'all') {
+            queryParams.append('major_category_code', params.major_category_code);
+        }
+        if (params?.minor_category_code && params.minor_category_code !== 'all') {
+            queryParams.append('minor_category_code', params.minor_category_code);
+        }
+        if (params?.component_name_en) {
+            queryParams.append('component_name_en', params.component_name_en);
+        }
+        if (params?.component_name_ko) {
+            queryParams.append('component_name_ko', params.component_name_ko);
+        }
+        
+        const url = `/api/v1/fabric-components/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const response = await api.get<IFabricComponent[]>(url);
+        return response.data;
+    },
+
+    getMajorCategories: async (): Promise<ICategoryInfo[]> => {
+        const response = await api.get<ICategoryInfo[]>('/api/v1/fabric-components/major-categories');
+        return response.data;
+    },
+
+    getMinorCategories: async (majorCategoryCode?: string): Promise<ICategoryInfo[]> => {
+        const url = majorCategoryCode && majorCategoryCode !== 'all' 
+            ? `/api/v1/fabric-components/minor-categories?major_category_code=${majorCategoryCode}`
+            : '/api/v1/fabric-components/minor-categories';
+        const response = await api.get<ICategoryInfo[]>(url);
+        return response.data;
+    },
+
+    getComponent: async (id: number): Promise<IFabricComponent> => {
+        const response = await api.get<IFabricComponent>(`/api/v1/fabric-components/${id}`);
+        return response.data;
+    },
+
+    createComponent: async (data: IFabricComponentCreateData): Promise<IFabricComponent> => {
+        const response = await api.post<IFabricComponent>('/api/v1/fabric-components/', data);
+        return response.data;
+    },
+
+    updateComponent: async (id: number, data: IFabricComponentUpdateData): Promise<IFabricComponent> => {
+        const response = await api.put<IFabricComponent>(`/api/v1/fabric-components/${id}`, data);
+        return response.data;
+    },
+
+    deleteComponent: async (id: number): Promise<void> => {
+        await api.delete(`/api/v1/fabric-components/${id}`);
     }
 };
 

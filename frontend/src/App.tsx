@@ -3,9 +3,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import MappingRuleManager from './components/MappingRuleManager';
+
 import AccountManager from './components/AccountManager';
 import StandardCategoryManager from './components/StandardCategoryManager';
+import FabricComponentManager from './components/FabricComponentManager';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './components/Login';
@@ -89,8 +90,9 @@ const App: React.FC = () => {
             <Route path="/login" element={<Login />} />
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/mapping" element={<MappingRuleManager />} />
+
               <Route path="/categories" element={<StandardCategoryManager />} />
+              <Route path="/fabric-components" element={<FabricComponentManager />} />
               <Route 
                 path="/accounts" 
                 element={

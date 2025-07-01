@@ -25,22 +25,22 @@ const Home: React.FC = () => {
 
   const features = [
     {
-      title: 'HS코드 자동 분류',
-      description: '의류 상품 정보를 기반으로 HS코드를 자동으로 분류합니다.',
+      title: '의류 카테고리 관리',
+      description: '의류 카테고리 정보를 관리하고 편집할 수 있습니다.',
       icon: <TableChartIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
-      action: () => navigate('/mapping'),
+      action: () => navigate('/categories'),
     },
     {
-      title: '엑셀 파일 업로드',
-      description: '대량의 상품 데이터를 엑셀 파일로 한 번에 처리할 수 있습니다.',
+      title: '의류 성분 사전',
+      description: '의류 성분 정보를 관리하고 검색할 수 있습니다.',
       icon: <CloudUploadIcon sx={{ fontSize: 40, color: theme.palette.secondary.main }} />,
-      action: () => navigate('/mapping'),
+      action: () => navigate('/fabric-components'),
     },
     {
-      title: '결과 다운로드',
-      description: '분류된 HS코드를 포함한 결과를 엑셀 파일로 다운로드할 수 있습니다.',
+      title: '계정 관리',
+      description: '시스템 계정을 관리하고 권한을 설정할 수 있습니다.',
       icon: <DownloadIcon sx={{ fontSize: 40, color: theme.palette.success.main }} />,
-      action: () => navigate('/mapping'),
+      action: () => navigate('/accounts'),
     }
   ];
 
@@ -48,10 +48,10 @@ const Home: React.FC = () => {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 6, textAlign: 'center' }}>
         <Typography variant="h4" sx={{ mb: 2, fontWeight: 'bold' }}>
-          HS코드 자동분류 시스템
+          의류 관리 시스템
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
-          의류 상품 정보를 기반으로 HS코드를 자동으로 분류하고 관리하세요
+          의류 카테고리와 성분 정보를 체계적으로 관리하세요
         </Typography>
       </Box>
 
@@ -97,10 +97,10 @@ const Home: React.FC = () => {
         <Button
           variant="contained"
           size="large"
-          onClick={() => navigate('/mapping')}
+          onClick={() => navigate('/categories')}
           startIcon={<TableChartIcon />}
         >
-          HS코드 분류 시작하기
+          카테고리 관리 시작하기
         </Button>
       </Box>
     </Container>

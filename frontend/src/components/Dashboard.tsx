@@ -52,12 +52,7 @@ const Dashboard: React.FC = () => {
   const { role } = useAuth();
 
   const dashboardItems = [
-    {
-      title: 'HS코드 매핑관리',
-      description: 'HS코드 자동 분류를 위한 매핑 규칙을 관리합니다. 엑셀 파일을 업로드하고 결과를 확인할 수 있습니다.',
-      icon: <MappingIcon fontSize="large" />,
-      path: '/mapping-rules',
-    },
+
     {
       title: '의류 분류 사전',
       description: '의류 분류를 위한 용어 사전을 관리합니다. 새로운 용어를 추가하고 기존 용어를 수정할 수 있습니다.',

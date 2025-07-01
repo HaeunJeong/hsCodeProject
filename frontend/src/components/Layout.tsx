@@ -76,8 +76,9 @@ const Layout: React.FC<LayoutProps> = () => {
 
   const menuItems = [
     { text: '홈', path: '/', icon: <HomeIcon /> },
-    { text: 'HS코드 매핑', path: '/mapping', icon: <TableChartIcon /> },
-    { text: '의류 카테고리 사전', path: '/categories', icon: <TableChartIcon /> },
+
+    { text: '의류 카테고리 관리', path: '/categories', icon: <TableChartIcon /> },
+    { text: '의류 성분 사전', path: '/fabric-components', icon: <TableChartIcon /> },
     ...(role === 'admin' ? [
       { text: '계정 관리', path: '/accounts', icon: <ManageAccountsIcon /> }
     ] : [])
