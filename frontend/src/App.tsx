@@ -7,9 +7,9 @@ import Home from './pages/Home';
 import AccountManager from './components/AccountManager';
 import StandardCategoryManager from './components/StandardCategoryManager';
 import FabricComponentManager from './components/FabricComponentManager';
+import HSClassification from './components/HSClassification';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
-import Login from './components/Login';
 
 const theme = createTheme({
   palette: {
@@ -87,12 +87,35 @@ const App: React.FC = () => {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/login" element={<Login />} />
             <Route element={<Layout />}>
-              <Route path="/" element={<Home />} />
-
-              <Route path="/categories" element={<StandardCategoryManager />} />
-              <Route path="/fabric-components" element={<FabricComponentManager />} />
+              <Route 
+                path="/" 
+                element={<Home />} 
+              />
+              <Route 
+                path="/hs-classification" 
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "client"]}>
+                    <HSClassification />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/categories" 
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <StandardCategoryManager />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/fabric-components" 
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <FabricComponentManager />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/accounts" 
                 element={

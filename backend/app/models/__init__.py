@@ -1,13 +1,15 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Integer
 from sqlalchemy.sql import func
-from ..database import Base
+from app.core.database import Base
 from .standard_category import StandardCategory
 from .fabric_component import FabricComponent
+from .hs_code_rule import HSCodeRule
 
 __all__ = [
     "Account",
     "StandardCategory",
-    "FabricComponent"
+    "FabricComponent",
+    "HSCodeRule"
 ]
 
 class Account(Base):

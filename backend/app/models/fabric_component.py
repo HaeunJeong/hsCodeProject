@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.sql import func
-from ..database import Base
+from app.core.database import Base
 
 class FabricComponent(Base):
     __tablename__ = "fabric_components"

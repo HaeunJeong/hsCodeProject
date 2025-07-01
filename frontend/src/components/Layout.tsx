@@ -29,6 +29,7 @@ import {
   Login as LoginIcon,
   Logout as LogoutIcon,
   Description as TemplateIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -75,13 +76,23 @@ const Layout: React.FC<LayoutProps> = () => {
   console.log('Layout - 현재 인증 상태:', { isAuthenticated, role });
 
   const menuItems = [
-    { text: '홈', path: '/', icon: <HomeIcon /> },
-
-    { text: '의류 카테고리 관리', path: '/categories', icon: <TableChartIcon /> },
-    { text: '의류 성분 사전', path: '/fabric-components', icon: <TableChartIcon /> },
-    ...(role === 'admin' ? [
-      { text: '계정 관리', path: '/accounts', icon: <ManageAccountsIcon /> }
-    ] : [])
+    // 비로그인 상태에서는 홈만 접근 가능
+    ...(!isAuthenticated ? [
+      { text: '홈', path: '/', icon: <HomeIcon /> }
+    ] : [
+      // client 권한은 홈과 HS코드 자동분류만 접근 가능
+      ...(role === 'client' ? [
+        { text: '홈', path: '/', icon: <HomeIcon /> },
+        { text: 'HS코드 자동분류', path: '/hs-classification', icon: <AssignmentIcon /> }
+      ] : [
+        // admin 권한은 모든 메뉴 접근 가능
+        { text: '홈', path: '/', icon: <HomeIcon /> },
+        { text: 'HS코드 자동분류', path: '/hs-classification', icon: <AssignmentIcon /> },
+        { text: '의류 카테고리 관리', path: '/categories', icon: <TableChartIcon /> },
+        { text: '의류 성분 사전', path: '/fabric-components', icon: <TableChartIcon /> },
+        { text: '계정 관리', path: '/accounts', icon: <ManageAccountsIcon /> }
+      ])
+    ])
   ];
 
   console.log('Layout - 메뉴 아이템:', menuItems);
@@ -96,11 +107,11 @@ const Layout: React.FC<LayoutProps> = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const handleLogin = () => {
-    navigate('/login');
+    navigate('/');
   };
 
   return (
@@ -128,8 +139,7 @@ const Layout: React.FC<LayoutProps> = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             HS코드 자동분류 시스템
           </Typography>
-          
-          {isAuthenticated ? (
+        
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Typography
@@ -150,25 +160,7 @@ const Layout: React.FC<LayoutProps> = () => {
                   {role === 'admin' ? '관리자' : '일반 사용자'}
                 </Typography>
               </Box>
-              <Button
-                variant="outlined"
-                color="inherit"
-                startIcon={<LogoutIcon />}
-                onClick={handleLogout}
-              >
-                로그아웃
-              </Button>
             </Box>
-          ) : (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<LoginIcon />}
-              onClick={handleLogin}
-            >
-              로그인
-            </Button>
-          )}
         </Toolbar>
       </AppBar>
       <Drawer

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api import auth, excel
+from app.routers import accounts, fabric_components, standard_categories
 from app.core.database import Base, engine, SessionLocal
 from app.core.init_db import init_db
 import logging
@@ -39,6 +40,9 @@ app.add_middleware(
 # API 라우터 설정
 app.include_router(auth.router, prefix=settings.API_V1_STR + "/auth", tags=["auth"])
 app.include_router(excel.router, prefix=settings.API_V1_STR + "/excel", tags=["excel"])
+app.include_router(accounts.router, prefix=settings.API_V1_STR + "/accounts", tags=["accounts"])
+app.include_router(fabric_components.router, prefix=settings.API_V1_STR + "/fabric-components", tags=["fabric-components"])
+app.include_router(standard_categories.router, prefix=settings.API_V1_STR + "/categories", tags=["categories"])
 
 @app.get("/")
 async def root():

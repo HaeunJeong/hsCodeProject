@@ -1,15 +1,20 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from pathlib import Path
+from .config import settings
 
-# SQLite 데이터베이스 직접 설정
-DATABASE_URL = f"sqlite:///{Path(__file__).parent.parent.parent.parent}/sql_app.db"
+# Config에서 데이터베이스 URL 가져오기
+DATABASE_URL = settings.DATABASE_URL
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+# PostgreSQL과 SQLite 모두 지원
+if "sqlite" in DATABASE_URL:
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    # PostgreSQL용 엔진
+    engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

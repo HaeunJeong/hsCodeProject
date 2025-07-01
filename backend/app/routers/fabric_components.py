@@ -9,7 +9,9 @@ from ..schemas.fabric_component import (
     FabricComponentResponse,
     CategoryInfo
 )
-from ..database import get_db
+from app.core.database import get_db
+from ..api.auth import get_current_account
+from ..models import Account
 
 router = APIRouter()
 
@@ -21,7 +23,8 @@ def get_fabric_components(
     component_name_ko: Optional[str] = Query(None, description="성분 한글명"),
     skip: int = 0, 
     limit: int = 100, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
 ):
     """의류 성분 사전 목록 조회"""
     query = db.query(FabricComponent)
@@ -43,7 +46,10 @@ def get_fabric_components(
     return components
 
 @router.get("/major-categories", response_model=List[CategoryInfo])
-def get_major_categories(db: Session = Depends(get_db)):
+def get_major_categories(
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
+):
     """대분류 목록 조회"""
     categories = db.query(
         distinct(FabricComponent.major_category_code).label('code'),
@@ -58,7 +64,8 @@ def get_major_categories(db: Session = Depends(get_db)):
 @router.get("/minor-categories", response_model=List[CategoryInfo])
 def get_minor_categories(
     major_category_code: Optional[str] = Query(None, description="대분류 코드"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
 ):
     """중분류 목록 조회"""
     query = db.query(
@@ -77,7 +84,11 @@ def get_minor_categories(
     return [{"code": cat.code, "name": cat.name} for cat in categories]
 
 @router.post("/", response_model=FabricComponentResponse)
-def create_fabric_component(component: FabricComponentCreate, db: Session = Depends(get_db)):
+def create_fabric_component(
+    component: FabricComponentCreate, 
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
+):
     """의류 성분 생성"""
     # 중복 검증
     existing = db.query(FabricComponent).filter(
@@ -99,7 +110,11 @@ def create_fabric_component(component: FabricComponentCreate, db: Session = Depe
     return db_component
 
 @router.get("/{component_id}", response_model=FabricComponentResponse)
-def get_fabric_component(component_id: int, db: Session = Depends(get_db)):
+def get_fabric_component(
+    component_id: int, 
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
+):
     """특정 의류 성분 조회"""
     component = db.query(FabricComponent).filter(FabricComponent.id == component_id).first()
     if component is None:
@@ -110,7 +125,8 @@ def get_fabric_component(component_id: int, db: Session = Depends(get_db)):
 def update_fabric_component(
     component_id: int, 
     component: FabricComponentUpdate, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
 ):
     """의류 성분 수정"""
     db_component = db.query(FabricComponent).filter(FabricComponent.id == component_id).first()
@@ -126,7 +142,11 @@ def update_fabric_component(
     return db_component
 
 @router.delete("/{component_id}")
-def delete_fabric_component(component_id: int, db: Session = Depends(get_db)):
+def delete_fabric_component(
+    component_id: int, 
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
+):
     """의류 성분 삭제"""
     db_component = db.query(FabricComponent).filter(FabricComponent.id == component_id).first()
     if db_component is None:

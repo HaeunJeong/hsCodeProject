@@ -4,8 +4,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# .env 파일 로드
+# .env 파일 로드 (backend 디렉토리에서)
 env_path = Path(__file__).parent.parent.parent / '.env'
+if not env_path.exists():
+    # backend 디렉토리의 .env 파일을 시도
+    env_path = Path(__file__).parent.parent.parent / 'backend' / '.env'
 load_dotenv(dotenv_path=env_path)
 
 class Settings(BaseSettings):

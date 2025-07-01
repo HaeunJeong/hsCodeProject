@@ -75,8 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return false;
         } catch (error: any) {
             console.error('로그인 오류:', error);
-            // 서버에서 에러를 반환한 경우 (401, 500 등)
-            const errorMessage = error.response?.data?.detail?.message || '서버 오류가 발생했습니다';
+            // 401 에러인 경우 특별한 에러 메시지 사용
+            let errorMessage = '서버 오류가 발생했습니다';
+            if (error.response?.status === 401) {
+                errorMessage = '등록되지 않은 코드이거나 코드를 잘못 입력했습니다.';
+            } else {
+                errorMessage = error.response?.data?.detail?.message || '서버 오류가 발생했습니다';
+            }
+            
             const errorData = {
                 ...authState,  // 기존 상태 유지
                 isAuthenticated: false,

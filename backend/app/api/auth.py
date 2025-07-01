@@ -12,7 +12,7 @@ from app.models import Account
 from app.schemas import Token, AccessCodeCreate
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/validate")
 
 ADMIN_CODE = "admin123"
 
@@ -35,6 +35,20 @@ def get_current_account(
     except JWTError:
         raise credentials_exception
     
+    # admin123 코드의 경우 가상 Account 객체 반환
+    if code == ADMIN_CODE:
+        # 가상 admin 계정 객체 생성
+        admin_account = Account()
+        admin_account.id = 0
+        admin_account.code = ADMIN_CODE
+        admin_account.name = "관리자"
+        admin_account.role = "admin"
+        admin_account.isActive = True
+        admin_account.createdAt = datetime.now()
+        admin_account.updatedAt = datetime.now()
+        return admin_account
+    
+    # 일반 계정의 경우 데이터베이스에서 조회
     account = db.query(Account).filter(Account.code == code).first()
     if account is None:
         raise credentials_exception

@@ -3,18 +3,30 @@ from sqlalchemy.orm import Session
 from typing import List
 from ..models.standard_category import StandardCategory
 from ..schemas.standard_category import StandardCategoryUpdate, StandardCategoryResponse
-from ..database import get_db
+from app.core.database import get_db
+from ..api.auth import get_current_account
+from ..models import Account
 
 router = APIRouter()
 
 @router.get("/", response_model=List[StandardCategoryResponse])
-def get_standard_categories(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_standard_categories(
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
+):
     """표준 카테고리 목록 조회"""
     categories = db.query(StandardCategory).offset(skip).limit(limit).all()
     return categories
 
 @router.put("/{category_id}", response_model=StandardCategoryResponse)
-def update_standard_category(category_id: int, category: StandardCategoryUpdate, db: Session = Depends(get_db)):
+def update_standard_category(
+    category_id: int, 
+    category: StandardCategoryUpdate, 
+    db: Session = Depends(get_db),
+    current_account: Account = Depends(get_current_account)
+):
     """표준 카테고리 수정 (한글명, 설명, 포함단어만 수정 가능)"""
     db_category = db.query(StandardCategory).filter(StandardCategory.id == category_id).first()
     if db_category is None:
