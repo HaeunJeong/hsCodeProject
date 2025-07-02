@@ -139,27 +139,6 @@ const Home: React.FC = () => {
         <Typography variant="h5" sx={{ mb: 4, fontWeight: 600 }}>
           로그인 상태입니다
         </Typography>
-        
-        <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography
-            component="span"
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              height: '32px',
-              padding: '0 16px',
-              fontSize: '0.875rem',
-              borderRadius: '20px',
-              backgroundColor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
-              color: role === 'admin' ? '#1976d2' : '#757575',
-              border: '1px solid',
-              borderColor: role === 'admin' ? '#bbdefb' : '#e0e0e0',
-              fontWeight: 600,
-            }}
-          >
-            {role === 'admin' ? '관리자' : '일반 사용자'}
-          </Typography>
-        </Box>
 
         <Button
           variant="contained"

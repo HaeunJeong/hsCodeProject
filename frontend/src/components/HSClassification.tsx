@@ -328,11 +328,17 @@ const HSClassification: React.FC = () => {
             {/* 양식 다운로드 버튼 */}
             <Box sx={{ marginBottom: 3, textAlign: 'right' }}>
               <Button
-                variant="contained"
+                variant="outlined"
                 startIcon={<DownloadIcon />}
                 onClick={handleDownloadTemplate}
                 disabled={downloadingTemplate}
-                sx={{ minWidth: 150 }}
+                sx={{ 
+                  minWidth: 150,
+                  backgroundColor: 'white',
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5'
+                  }
+                }}
               >
                 {downloadingTemplate ? (
                   <CircularProgress size={20} />
@@ -369,8 +375,8 @@ const HSClassification: React.FC = () => {
                 onChange={handleFileSelect}
               />
               
-              <CloudUploadIcon sx={{ fontSize: 48, color: '#ccc', marginBottom: 2 }} />
               
+              <CloudUploadIcon sx={{ fontSize: 48, color: '#ccc', marginBottom: 2 }} />
               {selectedFile ? (
                 <Box>
                   <Typography variant="h6" color="primary">
@@ -383,34 +389,36 @@ const HSClassification: React.FC = () => {
               ) : (
                 <Box>
                   <Typography variant="h6" color="textSecondary">
-                    여기에 파일을 업로드하세요
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" sx={{ marginTop: 1 }}>
-                    Excel 파일을 드래그 앤 드롭하거나 클릭하여 선택하세요
+                    엑셀 파일을 업로드하세요
                   </Typography>
                 </Box>
               )}
             </Paper>
 
             {/* HS코드 분류하기 버튼 */}
-            <Box sx={{ textAlign: 'center' }}>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handleClassification}
-                disabled={!selectedFile || uploading}
-                sx={{ minWidth: 200, minHeight: 50 }}
-              >
-                {uploading ? (
-                  <>
-                    <CircularProgress size={20} sx={{ marginRight: 1 }} />
-                    처리 중...
-                  </>
-                ) : (
-                  'HS코드 분류하기'
-                )}
-              </Button>
-            </Box>
+            {selectedFile && (
+              <Box sx={{ textAlign: 'center' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handleClassification}
+                  disabled={uploading}
+                  sx={{ 
+                    minWidth: 200, 
+                    minHeight: 50
+                  }}
+                >
+                  {uploading ? (
+                    <>
+                      <CircularProgress size={20} sx={{ marginRight: 1 }} />
+                      처리 중...
+                    </>
+                  ) : (
+                    'HS코드 분류하기'
+                  )}
+                </Button>
+              </Box>
+            )}
           </CardContent>
         </Card>
       )}
