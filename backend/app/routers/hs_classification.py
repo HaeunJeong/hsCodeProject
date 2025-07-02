@@ -10,7 +10,7 @@ from ..api.auth import get_current_account
 router = APIRouter()
 
 # 양식 파일 경로
-TEMPLATE_FILE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "templates", "excel_upload_template.xlsx")
+TEMPLATE_FILE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "resource", "templates", "excel_upload_template.xlsx")
 
 @router.get("/template")
 async def download_template():
@@ -39,8 +39,8 @@ async def upload_file(
         # 파일 읽기
         contents = await file.read()
         
-        # pandas로 엑셀 파일 읽기
-        df = pd.read_excel(contents)
+        # pandas로 엑셀 파일 읽기 (첫 번째 행을 헤더로 사용)
+        df = pd.read_excel(contents, header=0)
         
         # 기본적인 데이터 검증
         if df.empty:
@@ -51,7 +51,7 @@ async def upload_file(
         hs_service = HSClassificationService(db)
         
         # 1. 템플릿 양식 검증
-        template_df = pd.read_excel(TEMPLATE_FILE_PATH)
+        template_df = pd.read_excel(TEMPLATE_FILE_PATH, header=0)
         validation_result = hs_service.validate_template(df, template_df)
         
         if not validation_result["valid"]:

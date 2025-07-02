@@ -44,7 +44,6 @@ const initialFormData: IFabricComponentCreateData = {
 const FabricComponentManager: React.FC = () => {
   const [components, setComponents] = useState<IFabricComponent[]>([]);
   const [filteredComponents, setFilteredComponents] = useState<IFabricComponent[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -65,15 +64,12 @@ const FabricComponentManager: React.FC = () => {
 
   const loadComponents = async () => {
     try {
-      setLoading(true);
       const data = await fabricComponentApi.getComponents();
       setComponents(data);
       setFilteredComponents(data);
     } catch (error) {
       setError('의류 성분 목록을 불러오는데 실패했습니다.');
       console.error('성분 목록 로딩 실패:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -118,7 +114,7 @@ const FabricComponentManager: React.FC = () => {
 
   const handleSearch = async () => {
     try {
-      setLoading(true);
+      setError(null);
       
       const searchParams: any = {};
       
@@ -140,8 +136,6 @@ const FabricComponentManager: React.FC = () => {
     } catch (error) {
       setError('검색 중 오류가 발생했습니다.');
       console.error('검색 실패:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -178,7 +172,6 @@ const FabricComponentManager: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      setLoading(true);
       setError(null);
       
       // 필수 필드 검증
@@ -216,8 +209,8 @@ const FabricComponentManager: React.FC = () => {
         
         const duplicateKo = formData.component_name_ko && formData.component_name_ko.trim() && components.some(component => {
           if (editingId && component.id === editingId) return false;
-          return component.component_name_ko && 
-                 component.component_name_ko.toLowerCase() === formData.component_name_ko!.trim().toLowerCase();
+                      return component.component_name_ko && 
+                   component.component_name_ko.toLowerCase() === formData.component_name_ko!.trim().toLowerCase();
         });
 
         if (duplicateEn) {
@@ -227,7 +220,13 @@ const FabricComponentManager: React.FC = () => {
         }
         return;
       }
-      
+
+      const reservedWords = ['SHELL', 'MAIN', 'RIB', 'LINING', 'ATTACHED'];
+      if (reservedWords.includes(formData.component_name_en.trim().toUpperCase())) {
+        setError('예약어는 사용할 수 없습니다. 예약어: ' + reservedWords.join(', '));
+        return;
+      }
+
       if (editingId) {
         await fabricComponentApi.updateComponent(editingId, formData);
         setSuccess('성분이 수정되었습니다.');
@@ -247,11 +246,15 @@ const FabricComponentManager: React.FC = () => {
         await handleSearch();
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || '저장에 실패했습니다.';
+      console.error('저장 실패 전체 에러:', error);
+      console.error('응답 데이터:', error.response?.data);
+      console.error('상태 코드:', error.response?.status);
+      
+      const errorMessage = error.response?.data?.message || error.response?.data?.detail || '저장에 실패했습니다.';
+      console.error('최종 에러 메시지:', errorMessage);
+      
       setError(errorMessage);
       console.error('저장 실패:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -259,7 +262,6 @@ const FabricComponentManager: React.FC = () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
     
     try {
-      setLoading(true);
       await fabricComponentApi.deleteComponent(id);
       setSuccess('성분이 삭제되었습니다.');
       await loadComponents();
@@ -273,11 +275,9 @@ const FabricComponentManager: React.FC = () => {
         await handleSearch();
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || '삭제에 실패했습니다.';
+      const errorMessage = error.response?.data?.message || error.response?.data?.detail || '삭제에 실패했습니다.';
       setError(errorMessage);
       console.error('삭제 실패:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -362,7 +362,6 @@ const FabricComponentManager: React.FC = () => {
                variant="contained"
                startIcon={<SearchIcon />}
                onClick={handleSearch}
-               disabled={loading}
              >
                검색
              </Button>
@@ -386,21 +385,17 @@ const FabricComponentManager: React.FC = () => {
         </Box>
       </Paper>
 
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
-          <CircularProgress />
-        </Box>
-      )}
+
 
       {/* 성분 목록 테이블 */}
       <TableContainer component={Paper}>
         <Table>
                      <TableHead>
-             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-               <TableCell sx={{ fontWeight: 'bold' }}>대분류명</TableCell>
-               <TableCell sx={{ fontWeight: 'bold' }}>중분류명</TableCell>
-               <TableCell sx={{ fontWeight: 'bold' }}>성분 영문명</TableCell>
-               <TableCell sx={{ fontWeight: 'bold' }}>성분 한글명</TableCell>
+             <TableRow sx={{ backgroundColor: '#E8F3FF' }}>
+               <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>대분류명</TableCell>
+               <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>중분류명</TableCell>
+               <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>성분 영문명</TableCell>
+               <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>성분 한글명</TableCell>
              </TableRow>
            </TableHead>
           <TableBody>
@@ -411,13 +406,13 @@ const FabricComponentManager: React.FC = () => {
                  sx={{ cursor: 'pointer' }}
                  onClick={() => handleOpenDialog(component)}
                >
-                 <TableCell>{component.major_category_name}</TableCell>
-                 <TableCell>{component.minor_category_name}</TableCell>
-                 <TableCell>{component.component_name_en}</TableCell>
-                 <TableCell>{component.component_name_ko || '-'}</TableCell>
+                 <TableCell sx={{ textAlign: 'center' }}>{component.major_category_name}</TableCell>
+                 <TableCell sx={{ textAlign: 'center' }}>{component.minor_category_name}</TableCell>
+                 <TableCell sx={{ textAlign: 'center' }}>{component.component_name_en}</TableCell>
+                 <TableCell sx={{ textAlign: 'center' }}>{component.component_name_ko || '-'}</TableCell>
                </TableRow>
              ))}
-                         {filteredComponents.length === 0 && !loading && (
+                         {filteredComponents.length === 0 && (
                <TableRow>
                  <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
                    성분 데이터가 없습니다.
@@ -439,6 +434,19 @@ const FabricComponentManager: React.FC = () => {
           {editingId ? '의류 성분 수정' : '의류 성분 신규 추가'}
         </DialogTitle>
         <DialogContent sx={{ p: 3 }}>
+          {/* 다이얼로그 내부 에러/성공 메시지 */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+              {success}
+            </Alert>
+          )}
+
           <Box sx={{ mt: 1 }}>
             {/* 성분 대분류명 */}
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -569,7 +577,6 @@ const FabricComponentManager: React.FC = () => {
                   onClick={() => handleDelete(editingId)} 
                   variant="outlined"
                   color="error"
-                  disabled={loading}
                   sx={{ 
                     minWidth: 80,
                     '&:hover': {
@@ -600,7 +607,6 @@ const FabricComponentManager: React.FC = () => {
               <Button 
                 onClick={handleSubmit} 
                 variant="contained"
-                disabled={loading}
                 sx={{ 
                   minWidth: 80,
                   backgroundColor: '#007bff',

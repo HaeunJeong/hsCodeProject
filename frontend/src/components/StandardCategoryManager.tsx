@@ -24,7 +24,6 @@ import { standardCategoryApi } from '../services/api';
 
 const StandardCategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<IStandardCategory[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -37,15 +36,12 @@ const StandardCategoryManager: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      setLoading(true);
       setError(null);
       const data = await standardCategoryApi.getCategories();
       setCategories(data);
     } catch (error) {
       setError('카테고리 목록을 불러오는데 실패했습니다.');
       console.error('카테고리 목록 로딩 실패:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -78,7 +74,6 @@ const StandardCategoryManager: React.FC = () => {
     if (!selectedCategory) return;
 
     try {
-      setLoading(true);
       setError(null);
       
       await standardCategoryApi.updateCategory(selectedCategory.id, formData);
@@ -90,8 +85,6 @@ const StandardCategoryManager: React.FC = () => {
       const errorMessage = error.response?.data?.detail || '카테고리 수정에 실패했습니다.';
       setError(errorMessage);
       console.error('카테고리 수정 실패:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -113,21 +106,15 @@ const StandardCategoryManager: React.FC = () => {
         </Alert>
       )}
 
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
-          <CircularProgress />
-        </Box>
-      )}
-
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>카테고리 번호</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>카테고리 영문명</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>카테고리 한글명</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>설명</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>포함 단어</TableCell>
+            <TableRow sx={{ backgroundColor: '#E8F3FF' }}>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>카테고리 번호</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>카테고리 영문명</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>카테고리 한글명</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>설명</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>포함 단어</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -138,18 +125,18 @@ const StandardCategoryManager: React.FC = () => {
                 sx={{ cursor: 'pointer' }}
                 onDoubleClick={() => handleRowDoubleClick(category)}
               >
-                <TableCell>{category.category_code}</TableCell>
-                <TableCell>{category.category_name_en}</TableCell>
-                <TableCell>{category.category_name_ko || '-'}</TableCell>
-                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <TableCell align="center" width={200}>{category.category_code}</TableCell>
+                <TableCell align="center" width={200}>{category.category_name_en}</TableCell>
+                <TableCell align="center" width={200}>{category.category_name_ko || '-'}</TableCell>
+                <TableCell align="center" sx={{ minWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {category.description || '-'}
                 </TableCell>
-                <TableCell sx={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <TableCell sx={{ minWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {category.keywords || '-'}
                 </TableCell>
               </TableRow>
             ))}
-            {categories.length === 0 && !loading && (
+            {categories.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
                   카테고리 데이터가 없습니다.
@@ -301,7 +288,6 @@ const StandardCategoryManager: React.FC = () => {
           <Button 
             onClick={handleSubmit} 
             variant="contained"
-            disabled={loading}
             sx={{ 
               minWidth: 80,
               backgroundColor: '#007bff',

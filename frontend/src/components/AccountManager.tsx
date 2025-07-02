@@ -70,8 +70,10 @@ const AccountManager: React.FC = () => {
     try {
       setLoading(true);
       const data = await accountApi.getAccounts();
-      setAccounts(data);
-      setFilteredAccounts(data); // 초기에는 모든 데이터 표시
+      // admin123 계정 제외
+      const filteredData = data.filter(account => account.code !== 'admin123');
+      setAccounts(filteredData);
+      setFilteredAccounts(filteredData); // 초기에는 모든 데이터 표시
     } catch (error) {
       setError('계정 목록을 불러오는데 실패했습니다.');
       console.error('계정 목록 로딩 실패:', error);
@@ -173,15 +175,31 @@ const AccountManager: React.FC = () => {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
-    setFormData(initialFormData);
     setEditingId(null);
+    setFormData(initialFormData);
     setError(null);
+    setSuccess(null);
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // 빈 값 검증
+      if (!formData.code.trim() || !formData.name.trim()) {
+        setError('정보를 모두 입력해주세요');
+        return;
+      }
+      
+      // 중복 코드 검증 (신규 등록시에만)
+      if (!editingId) {
+        const isDuplicate = accounts.some(account => account.code === formData.code.trim());
+        if (isDuplicate) {
+          setError('이미 등록된 코드입니다.');
+          return;
+        }
+      }
       
       if (editingId) {
         await accountApi.updateAccount(editingId, formData);
@@ -195,12 +213,30 @@ const AccountManager: React.FC = () => {
       
       // 데이터 새로고침 후 검색 조건 적용
       const data = await accountApi.getAccounts();
-      setAccounts(data);
-      const filteredData = applySearchToNewData(data);
+      // admin123 계정 제외
+      const filteredByAdmin = data.filter(account => account.code !== 'admin123');
+      setAccounts(filteredByAdmin);
+      const filteredData = applySearchToNewData(filteredByAdmin);
       setFilteredAccounts(filteredData);
       
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || '계정 저장에 실패했습니다.';
+      // 백엔드에서 오는 에러 처리
+      let errorMessage = '계정 저장에 실패했습니다.';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          // 중복 코드 관련 에러인지 확인
+          if (detail.includes('duplicate') || detail.includes('already exists') || detail.includes('중복')) {
+            errorMessage = '이미 등록된 코드입니다.';
+          } else {
+            errorMessage = detail;
+          }
+        } else {
+          errorMessage = detail.message || errorMessage;
+        }
+      }
+      
       setError(errorMessage);
       console.error('계정 저장 실패:', error);
     } finally {
@@ -226,8 +262,10 @@ const AccountManager: React.FC = () => {
       
       // 데이터 새로고침 후 검색 조건 적용
       const data = await accountApi.getAccounts();
-      setAccounts(data);
-      const filteredData = applySearchToNewData(data);
+      // admin123 계정 제외
+      const filteredByAdmin = data.filter(account => account.code !== 'admin123');
+      setAccounts(filteredByAdmin);
+      const filteredData = applySearchToNewData(filteredByAdmin);
       setFilteredAccounts(filteredData);
       
     } catch (error) {
@@ -258,8 +296,10 @@ const AccountManager: React.FC = () => {
       
       // 데이터 새로고침 후 검색 조건 적용
       const data = await accountApi.getAccounts();
-      setAccounts(data);
-      const filteredData = applySearchToNewData(data);
+      // admin123 계정 제외
+      const filteredByAdmin = data.filter(account => account.code !== 'admin123');
+      setAccounts(filteredByAdmin);
+      const filteredData = applySearchToNewData(filteredByAdmin);
       setFilteredAccounts(filteredData);
       
     } catch (error) {
@@ -287,79 +327,83 @@ const AccountManager: React.FC = () => {
 
       {/* 검색 영역 */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'flex-end' }}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>사용여부</InputLabel>
-              <Select
-                value={searchFilters.userType}
-                label="사용여부"
-                onChange={(e) => handleSearchChange('userType', e.target.value)}
-              >
-                <MenuItem value="all">전체</MenuItem>
-                <MenuItem value="active">사용</MenuItem>
-                <MenuItem value="inactive">미사용</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>권한</InputLabel>
-              <Select
-                value={searchFilters.role}
-                label="권한"
-                onChange={(e) => handleSearchChange('role', e.target.value)}
-              >
-                <MenuItem value="all">전체</MenuItem>
-                <MenuItem value="admin">관리자</MenuItem>
-                <MenuItem value="client">고객사</MenuItem>
-              </Select>
-            </FormControl>
-
-            <TextField
-              size="small"
-              label="계정 코드"
-              value={searchFilters.code}
-              onChange={(e) => handleSearchChange('code', e.target.value)}
-              sx={{ minWidth: 150 }}
-            />
-
-            <TextField
-              size="small"
-              label="이름"
-              value={searchFilters.name}
-              onChange={(e) => handleSearchChange('name', e.target.value)}
-              sx={{ minWidth: 150 }}
-            />
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-            <Button
-              variant="contained"
-              startIcon={<SearchIcon />}
-              onClick={handleSearch}
-              size="small"
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-end' }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>사용여부</InputLabel>
+            <Select
+              value={searchFilters.userType}
+              label="사용여부"
+              onChange={(e) => handleSearchChange('userType', e.target.value)}
             >
-              검색
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenDialog()}
-              size="small"
+              <MenuItem value="all">전체</MenuItem>
+              <MenuItem value="active">사용</MenuItem>
+              <MenuItem value="inactive">미사용</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>권한</InputLabel>
+            <Select
+              value={searchFilters.role}
+              label="권한"
+              onChange={(e) => handleSearchChange('role', e.target.value)}
             >
-              추가하기
-            </Button>
-          </Box>
+              <MenuItem value="all">전체</MenuItem>
+              <MenuItem value="admin">관리자</MenuItem>
+              <MenuItem value="client">고객사</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            size="small"
+            label="계정 코드"
+            value={searchFilters.code}
+            onChange={(e) => handleSearchChange('code', e.target.value)}
+            sx={{ minWidth: 150 }}
+          />
+
+          <TextField
+            size="small"
+            label="이름"
+            value={searchFilters.name}
+            onChange={(e) => handleSearchChange('name', e.target.value)}
+            sx={{ minWidth: 150 }}
+          />
+
+          <Button
+            variant="contained"
+            startIcon={<SearchIcon />}
+            onClick={handleSearch}
+          >
+            검색
+          </Button>
+          
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={{ 
+              backgroundColor: 'white',
+              color: '#666',
+              borderColor: '#ddd',
+              '&:hover': {
+                backgroundColor: '#f8f9fa',
+                borderColor: '#ccc'
+              }
+            }}
+          >
+            추가하기
+          </Button>
         </Box>
       </Paper>
 
-      {error && (
+      {!openDialog && error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {success && (
+      {!openDialog && success && (
         <Alert severity="success" sx={{ mb: 2 }}>
           {success}
         </Alert>
@@ -375,18 +419,18 @@ const AccountManager: React.FC = () => {
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell sx={{ fontWeight: 'bold' }}>사용여부</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>계정 코드</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>이름</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>권한</TableCell>
+            <TableRow sx={{ backgroundColor: '#E8F3FF' }}>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>사용여부</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>계정 코드</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>이름</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>권한</TableCell>
               <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>관리</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredAccounts.map((account) => (
               <TableRow key={account.id} hover>
-                <TableCell>
+                <TableCell align="center">
                   <Switch
                     checked={account.isActive}
                     size="small"
@@ -394,7 +438,7 @@ const AccountManager: React.FC = () => {
                     disabled={loading}
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell align="center">
                   <Chip
                     label={account.code}
                     color="primary"
@@ -405,8 +449,8 @@ const AccountManager: React.FC = () => {
                     sx={{ cursor: 'pointer' }}
                   />
                 </TableCell>
-                <TableCell>{account.name}</TableCell>
-                <TableCell>
+                <TableCell align="center">{account.name}</TableCell>
+                <TableCell align="center">
                   <Typography
                     component="span"
                     sx={{
@@ -453,6 +497,19 @@ const AccountManager: React.FC = () => {
           {editingId ? '계정 수정' : '계정 코드 수정'}
         </DialogTitle>
         <DialogContent>
+          {/* 다이얼로그 내부 에러/성공 메시지 */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+              {success}
+            </Alert>
+          )}
+
           <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               fullWidth
@@ -519,7 +576,7 @@ const AccountManager: React.FC = () => {
               <Button 
                 onClick={handleSubmit} 
                 variant="contained"
-                disabled={!formData.name || !formData.code || loading}
+                disabled={loading}
               >
                 저장
               </Button>

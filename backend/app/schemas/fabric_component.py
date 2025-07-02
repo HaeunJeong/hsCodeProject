@@ -1,6 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, ValidationError
 from typing import Optional
 from datetime import datetime
+
+# 예약어 목록 (의류 부위 라벨)
+RESERVED_WORDS = {'SHELL', 'MAIN', 'RIB', 'LINING', 'ATTACHED'}
 
 class FabricComponentBase(BaseModel):
     major_category_code: str
@@ -9,6 +12,13 @@ class FabricComponentBase(BaseModel):
     minor_category_name: str
     component_name_en: str
     component_name_ko: Optional[str] = None
+
+    @field_validator('component_name_en')
+    @classmethod
+    def validate_component_name_en(cls, v):
+        if v and v.strip().upper() in RESERVED_WORDS:
+            raise ValueError(f"'{v}'는 예약어로 사용할 수 없습니다. 예약어: {', '.join(RESERVED_WORDS)}")
+        return v
 
 class FabricComponentCreate(FabricComponentBase):
     pass
@@ -20,6 +30,13 @@ class FabricComponentUpdate(BaseModel):
     minor_category_name: Optional[str] = None
     component_name_en: Optional[str] = None
     component_name_ko: Optional[str] = None
+
+    @field_validator('component_name_en')
+    @classmethod
+    def validate_component_name_en(cls, v):
+        if v and v.strip().upper() in RESERVED_WORDS:
+            raise ValueError(f"'{v}'는 예약어로 사용할 수 없습니다. 예약어: {', '.join(RESERVED_WORDS)}")
+        return v
 
 class FabricComponentResponse(FabricComponentBase):
     id: int

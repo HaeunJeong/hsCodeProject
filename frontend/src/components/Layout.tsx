@@ -9,27 +9,16 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
   Toolbar,
   Typography,
   useTheme,
   Divider,
-  Button,
-  Chip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Home as HomeIcon,
-  TableChart as TableChartIcon,
-  Person as PersonIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  ManageAccounts as ManageAccountsIcon,
-  Login as LoginIcon,
-  Logout as LogoutIcon,
-  Description as TemplateIcon,
-  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -42,6 +31,8 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
 }>(({ theme, open }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
+  backgroundColor: '#F5F7FA',
+  minHeight: '100vh',
   transition: theme.transitions.create('margin', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -78,19 +69,19 @@ const Layout: React.FC<LayoutProps> = () => {
   const menuItems = [
     // 비로그인 상태에서는 홈만 접근 가능
     ...(!isAuthenticated ? [
-      { text: '홈', path: '/', icon: <HomeIcon /> }
+      { text: '홈', path: '/' }
     ] : [
       // client 권한은 홈과 HS코드 자동분류만 접근 가능
       ...(role === 'client' ? [
-        { text: '홈', path: '/', icon: <HomeIcon /> },
-        { text: 'HS코드 자동분류', path: '/hs-classification', icon: <AssignmentIcon /> }
+        { text: '홈', path: '/' },
+        { text: 'HS코드 자동분류', path: '/hs-classification' }
       ] : [
         // admin 권한은 모든 메뉴 접근 가능
-        { text: '홈', path: '/', icon: <HomeIcon /> },
-        { text: 'HS코드 자동분류', path: '/hs-classification', icon: <AssignmentIcon /> },
-        { text: '의류 카테고리 관리', path: '/categories', icon: <TableChartIcon /> },
-        { text: '의류 성분 사전', path: '/fabric-components', icon: <TableChartIcon /> },
-        { text: '계정 관리', path: '/accounts', icon: <ManageAccountsIcon /> }
+        { text: '홈', path: '/' },
+        { text: 'HS코드 자동분류', path: '/hs-classification' },
+        { text: '의류 카테고리 관리', path: '/categories' },
+        { text: '의류 성분 사전', path: '/fabric-components' },
+        { text: '계정 관리', path: '/accounts' }
       ])
     ])
   ];
@@ -120,9 +111,9 @@ const Layout: React.FC<LayoutProps> = () => {
       <AppBar
         position="fixed"
         sx={{
-          backgroundColor: 'white',
+          backgroundColor: 'transparent',
           color: 'text.primary',
-          boxShadow: 1,
+          boxShadow: 'none',
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
@@ -136,9 +127,18 @@ const Layout: React.FC<LayoutProps> = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            HS코드 자동분류 시스템
-          </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+            <img 
+              src="/haebom-logo.png" 
+              alt="HAEBOM HS코드 자동분류 시스템" 
+              style={{ 
+                height: '60px', 
+                width: 'auto', 
+                cursor: 'pointer' 
+              }}
+              onClick={() => navigate('/')}
+            />
+          </Box>
         
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -170,7 +170,8 @@ const Layout: React.FC<LayoutProps> = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            backgroundColor: theme.palette.grey[50],
+            backgroundColor: '#FFFFFF',
+            borderRight: '1px solid #E0E0E0',
           },
         }}
         variant="persistent"
@@ -178,11 +179,11 @@ const Layout: React.FC<LayoutProps> = () => {
         open={open}
       >
         <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
+          <IconButton onClick={handleDrawerClose} sx={{ color: '#5BA7F7' }}>
             {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </IconButton>
         </DrawerHeader>
-        <Divider />
+        <Divider sx={{ borderColor: '#E0E0E0' }} />
         <List>
           {menuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
@@ -190,23 +191,30 @@ const Layout: React.FC<LayoutProps> = () => {
                 onClick={() => navigate(item.path)}
                 selected={location.pathname === item.path}
                 sx={{
+                  pl: 4,
+                  pr: 1,
+                  py: 1.5,
                   '&.Mui-selected': {
-                    backgroundColor: theme.palette.primary.light,
-                    color: theme.palette.primary.main,
+                    backgroundColor: '#5BA7F7',
+                    color: '#FFFFFF',
                     '&:hover': {
-                      backgroundColor: theme.palette.primary.light,
+                      backgroundColor: '#4285F4',
                     },
+                  },
+                  '&:hover': {
+                    backgroundColor: '#F5F5F5',
                   },
                 }}
               >
-                <ListItemIcon
+                <ListItemText 
+                  primary={item.text}
                   sx={{
-                    color: location.pathname === item.path ? theme.palette.primary.main : 'inherit',
+                    '& .MuiListItemText-primary': {
+                      fontWeight: location.pathname === item.path ? 700 : 600,
+                      color: location.pathname === item.path ? '#FFFFFF' : 'inherit',
+                    }
                   }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
+                />
               </ListItemButton>
             </ListItem>
           ))}

@@ -17,7 +17,7 @@ def get_standard_categories(
     current_account: Account = Depends(get_current_account)
 ):
     """표준 카테고리 목록 조회"""
-    categories = db.query(StandardCategory).offset(skip).limit(limit).all()
+    categories = db.query(StandardCategory).order_by(StandardCategory.id).offset(skip).limit(limit).all()
     return categories
 
 @router.put("/{category_id}", response_model=StandardCategoryResponse)

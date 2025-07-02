@@ -15,70 +15,35 @@ const api = axios.create({
 // 요청 인터셉터: 토큰 자동 추가
 api.interceptors.request.use((config) => {
     const authData = localStorage.getItem('auth');
-    console.log('API 요청 인터셉터 - authData:', authData ? 'exists' : 'not found');
     
     if (authData) {
         try {
             const { accessToken } = JSON.parse(authData);
-            console.log('API 요청 인터셉터 - accessToken:', accessToken ? 'exists' : 'not found');
             if (accessToken) {
                 config.headers.Authorization = `Bearer ${accessToken}`;
-                console.log('API 요청 인터셉터 - Authorization 헤더 설정됨');
             }
         } catch (error) {
             console.error('API 요청 인터셉터 - authData 파싱 오류:', error);
         }
     }
     
-    console.log('API 요청:', config.method?.toUpperCase(), config.url);
     return config;
 });
 
 // 응답 인터셉터: 에러 처리
 api.interceptors.response.use(
     (response: AxiosResponse) => {
-        console.log('API 응답 성공:', response.status, response.config?.url);
         return response;
     },
     (error) => {
-        console.log('API 응답 오류:', error.response?.status, error.config?.url, error.response?.data);
-        
         if (error.response?.status === 401) {
             // 로그인 요청인지 확인
             const isLoginRequest = error.config?.url?.includes('/api/v1/auth/validate');
             
-            console.log('401 오류 발생 - 요청 URL:', error.config?.url);
-            console.log('401 오류 발생 - 로그인 요청 여부:', isLoginRequest);
-            
             // 로그인 요청이 아닌 경우에만 자동 리다이렉트
             if (!isLoginRequest) {
-                // 현재 저장된 인증 정보 확인
-                const authData = localStorage.getItem('auth');
-                console.log('401 오류 발생 - 현재 인증 데이터:', authData);
-                
-                if (authData) {
-                    try {
-                        const parsedAuth = JSON.parse(authData);
-                        console.log('파싱된 인증 데이터:', {
-                            hasToken: !!parsedAuth.accessToken,
-                            accessCode: parsedAuth.accessCode,
-                            role: parsedAuth.role
-                        });
-                        
-                        // 토큰이 포함된 요청 헤더 확인
-                        console.log('요청 헤더:', error.config?.headers?.Authorization);
-                    } catch (e) {
-                        console.error('인증 데이터 파싱 실패:', e);
-                    }
-                }
-                
-                console.log('401 오류 상세 정보:', error.response?.data);
-                console.log('401 오류 - 인증 정보 제거 및 홈 페이지로 이동');
                 localStorage.removeItem('auth');
                 window.location.href = '/';
-            } else {
-                // 로그인 요청인 경우 에러를 그대로 전달 (Home 컴포넌트에서 처리)
-                console.log('로그인 요청에서 401 오류 - 에러를 그대로 전달');
             }
         }
         return Promise.reject(error);
@@ -297,7 +262,7 @@ export const standardCategoryApi = {
 
 // FabricComponent 관련 API
 export const fabricComponentApi = {
-    getComponents: async (params?: {
+getComponents: async (params?: {
         major_category_code?: string;
         minor_category_code?: string;
         component_name_en?: string;
