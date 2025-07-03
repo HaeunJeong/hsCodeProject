@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const errorData = {
                 ...authState,  // 기존 상태 유지
                 isAuthenticated: false,
-                error: '유효하지 않은 접속코드입니다'
+                error: '등록되지 않은 코드이거나 코드를 잘못 입력했습니다.'
             };
             setAuthState(errorData);
             return false;

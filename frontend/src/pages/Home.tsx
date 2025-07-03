@@ -68,7 +68,7 @@ const Home: React.FC = () => {
   // 비로그인 상태 UI
   if (!isAuthenticated) {
     return (
-      <Container maxWidth="sm" sx={{ mt: 8, mb: 4 }}>
+      <Container maxWidth="xs" sx={{ mt: 8, mb: 4 }}>
         <Paper 
           elevation={0} 
           sx={{ 
@@ -81,9 +81,8 @@ const Home: React.FC = () => {
             로그인 코드를 입력해주세요
           </Typography>
           
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
             <TextField
-              fullWidth
               variant="outlined"
               placeholder="접속 코드 입력"
               value={accessCode}
@@ -94,8 +93,13 @@ const Home: React.FC = () => {
               onKeyPress={handleKeyPress}
               disabled={loading}
               sx={{
+                width: '280px',
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
+                  backgroundColor: 'white',
+                },
+                '& .MuiInputBase-input': {
+                  backgroundColor: 'white',
                 }
               }}
             />
