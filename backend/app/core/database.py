@@ -6,15 +6,8 @@ from .config import settings
 # Config에서 데이터베이스 URL 가져오기
 DATABASE_URL = settings.DATABASE_URL
 
-# PostgreSQL과 SQLite 모두 지원
-if "sqlite" in DATABASE_URL:
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False}
-    )
-else:
-    # PostgreSQL용 엔진
-    engine = create_engine(DATABASE_URL)
+# PostgreSQL용 엔진
+engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

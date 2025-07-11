@@ -55,9 +55,15 @@ async def upload_file(
         validation_result = hs_service.validate_template(df, template_df)
         
         if not validation_result["valid"]:
+            # 오류 타입에 따라 메시지 결정
+            if validation_result.get("error_type") == "template":
+                message = "템플릿 양식 검증 실패"
+            else:  # data 오류 또는 기타
+                message = "필수 정보 누락"
+            
             return {
                 "success": False,
-                "message": "템플릿 양식 검증 실패",
+                "message": message,
                 "data": {
                     "filename": file.filename,
                     "validation_errors": validation_result["errors"]

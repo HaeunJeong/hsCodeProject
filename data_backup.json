@@ -4254,7 +4254,7 @@
       "category_name_en": "active_outer",
       "category_name_ko": "기능성 아우터",
       "description": "",
-      "keywords": ""
+      "keywords": "active_outer, 바람막이, ZIP-UP, JUMPER, WINDBREAKER"
     },
     {
       "id": 3,
@@ -4366,7 +4366,7 @@
       "category_name_en": "jackets",
       "category_name_ko": "재킷",
       "description": "",
-      "keywords": ""
+      "keywords": "JACKET, BLAZER, TRUCKER"
     },
     {
       "id": 17,
@@ -4374,7 +4374,7 @@
       "category_name_en": "knit_layer",
       "category_name_ko": "니트 레이어류",
       "description": "",
-      "keywords": ""
+      "keywords": "CARDIGAN"
     },
     {
       "id": 18,
@@ -4430,7 +4430,7 @@
       "category_name_en": "singlet",
       "category_name_ko": "민소매 이너",
       "description": "",
-      "keywords": ""
+      "keywords": "VEST, KNIT VEST, TANK TOP"
     },
     {
       "id": 25,
@@ -4518,7 +4518,7 @@
       "category_name_en": "bottoms",
       "category_name_ko": "하의",
       "description": "",
-      "keywords": ""
+      "keywords": "PANTS, TROUSER, SHORTS, JEANS, TROUSERS"
     },
     {
       "id": 36,
@@ -4526,7 +4526,7 @@
       "category_name_en": "tshirts",
       "category_name_ko": "티셔츠",
       "description": "",
-      "keywords": ""
+      "keywords": "T-SHIRT, T-SHIRTS"
     },
     {
       "id": 37,

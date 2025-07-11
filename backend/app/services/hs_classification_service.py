@@ -12,55 +12,73 @@ class HSClassificationService:
         
     def validate_template(self, df: pd.DataFrame, template_df: pd.DataFrame) -> Dict[str, Any]:
         """템플릿 양식 검증"""
-        errors = []
+        template_errors = []  # 양식 오류
+        data_errors = []      # 필수값 누락 오류
         
         # 1. 헤더 검증 (첫 번째 행)
         required_headers = ["StyleNo", "제품명", "직조방식", "카테고리", "성별", "상세 성분", "HSCode", "Note"]
         if len(df.columns) < len(required_headers):
-            errors.append("템플릿 컬럼 수가 부족합니다.")
+            template_errors.append("템플릿 컬럼 수가 부족합니다.")
         else:
             for i, header in enumerate(required_headers):
                 if i < len(df.columns) and df.columns[i] != header:
-                    errors.append(f"컬럼명이 일치하지 않습니다: 예상 '{header}', 실제 '{df.columns[i]}'")
+                    template_errors.append(f"컬럼명이 일치하지 않습니다: 예상 '{header}', 실제 '{df.columns[i]}'")
         
-        # 2. 필수값 검증 (설명 행 제외하고 실제 데이터부터)
+        # 2. 데이터 존재 여부 검증
         if len(df) <= 1:
-            errors.append("데이터가 없습니다.")
-        else:
-            for idx, row in df.iterrows():
-                row_errors = []
-
-                if idx < 1:  # 0번째는 설명 행이므로 스킵
-                    continue
-                
-                # StyleNo 필수
-                if pd.isna(row.get('StyleNo')) or str(row.get('StyleNo')).strip() == '':
-                    row_errors.append("StyleNo가 누락되었습니다.")
-                
-                # 직조방식 필수 및 값 검증
-                weaving_type = str(row.get('직조방식', '')).strip().lower()
-                if not weaving_type or weaving_type not in ['knit', 'woven']:
-                    row_errors.append("직조방식은 knit 또는 woven이어야 합니다.")
-                
-                # 카테고리 필수
-                if pd.isna(row.get('카테고리')) or str(row.get('카테고리')).strip() == '':
-                    row_errors.append("카테고리가 누락되었습니다.")
-                
-                # 성별 값 검증 (선택사항이지만 값이 있으면 검증)
-                gender = str(row.get('성별', '')).strip().lower()
-                if gender and gender not in ['men', 'women', '']:
-                    row_errors.append("성별은 men 또는 women이어야 합니다.")
-                
-                # 상세 성분 필수
-                if pd.isna(row.get('상세 성분')) or str(row.get('상세 성분')).strip() == '':
-                    row_errors.append("상세 성분이 누락되었습니다.")
-                
-                if row_errors:
-                    errors.append(f"행 {idx + 2}: {', '.join(row_errors)}")
+            template_errors.append("데이터가 없습니다.")
         
+        # 템플릿 양식 오류가 있으면 데이터 검증 스킵
+        if template_errors:
+            return {
+                "valid": False,
+                "error_type": "template",
+                "errors": template_errors
+            }
+        
+        # 3. 필수값 검증 (설명 행 제외하고 실제 데이터부터)
+        for idx, row in df.iterrows():
+            row_errors = []
+
+            if idx < 1:  # 0번째는 설명 행이므로 스킵
+                continue
+            
+            # StyleNo 필수
+            style_no_raw = row.get('StyleNo')
+            if pd.isna(style_no_raw) or str(style_no_raw).strip() == '' or str(style_no_raw).strip().lower() == 'nan':
+                row_errors.append("StyleNo가 누락되었습니다.")
+            
+            # 직조방식 필수 (값 검증은 개별 행 처리에서 수행)
+            weaving_type_raw = row.get('직조방식')
+            if pd.isna(weaving_type_raw) or str(weaving_type_raw).strip() == '' or str(weaving_type_raw).strip().lower() == 'nan':
+                row_errors.append("직조방식이 누락되었습니다.")
+            
+            # 카테고리 필수
+            category_raw = row.get('카테고리')
+            if pd.isna(category_raw) or str(category_raw).strip() == '' or str(category_raw).strip().lower() == 'nan':
+                row_errors.append("카테고리가 누락되었습니다.")
+            
+            # 상세 성분 필수
+            composition_raw = row.get('상세 성분')
+            if pd.isna(composition_raw) or str(composition_raw).strip() == '' or str(composition_raw).strip().lower() == 'nan':
+                row_errors.append("상세 성분이 누락되었습니다.")
+            
+            if row_errors:
+                data_errors.append(f"행 {idx + 2}: {', '.join(row_errors)}")
+        
+        # 필수값 누락이 있는 경우
+        if data_errors:
+            return {
+                "valid": False,
+                "error_type": "data",
+                "errors": data_errors
+            }
+        
+        # 모든 검증 통과
         return {
-            "valid": len(errors) == 0,
-            "errors": errors
+            "valid": True,
+            "error_type": None,
+            "errors": []
         }
     
     def find_standard_category(self, category_text: str) -> Optional[str]:
@@ -73,17 +91,18 @@ class HSClassificationService:
         # 표준 카테고리들과 매칭
         categories = self.db.query(StandardCategory).order_by(StandardCategory.id).all()
         
+        # 완전 일치만 허용 (앞뒤 공백은 제거하되 중간 공백은 정확히 일치)
         for cat in categories:
-            # 1. category_name_en과 직접 매칭 확인
-            if cat.category_name_en and cat.category_name_en.lower() in category_text:
+            # 1. category_name_en과 완전 일치 확인
+            if cat.category_name_en and cat.category_name_en.lower() == category_text:
                 return cat.category_name_en.lower()
             
-            # 2. keywords와 매칭 확인
+            # 2. keywords와 완전 일치 확인
             if cat.keywords:
                 keywords = cat.keywords.lower().split(',')
                 for keyword in keywords:
-                    keyword = keyword.strip()
-                    if keyword and keyword in category_text:
+                    keyword = keyword.strip()  # 키워드 자체는 CSV에서 공백 제거 필요
+                    if keyword and keyword == category_text:
                         return cat.category_name_en.lower()
         
         return None
@@ -106,36 +125,87 @@ class HSClassificationService:
         # 불필요한 공백 및 개행 정리
         composition_text = re.sub(r'\s+', ' ', composition_text).strip()
         
-        fabric_components = {}
+        # 1단계: 모든 가능한 매칭을 찾아서 위치별로 정렬
+        all_matches = []
         
-        # 등록된 성분명들 가져오기
+        # 패턴 1: "숫자% 성분명" (예: "71% POLYESTER")
+        pattern1 = r'(\d+(?:\.\d+)?)\s*%\s+([A-Za-z][A-Za-z0-9_\-]+)'
+        for match in re.finditer(pattern1, composition_text, re.IGNORECASE):
+            percentage = float(match.group(1))
+            component = match.group(2).strip().upper()
+            all_matches.append({
+                'start': match.start(),
+                'end': match.end(),
+                'component': component,
+                'percentage': percentage,
+                'pattern': 1
+            })
+        
+        # 패턴 2: "성분명 숫자%" (예: "COTTON 67%")
+        pattern2 = r'\b([A-Za-z][A-Za-z0-9_\-]+)\s+(\d+(?:\.\d+)?)\s*%'
+        for match in re.finditer(pattern2, composition_text, re.IGNORECASE):
+            component = match.group(1).strip().upper()
+            percentage = float(match.group(2))
+            all_matches.append({
+                'start': match.start(),
+                'end': match.end(),
+                'component': component,
+                'percentage': percentage,
+                'pattern': 2
+            })
+        
+        # 패턴 3: "성분명숫자" (공백 없이, 예: "Cotton60", "Modal40")
+        pattern3 = r'\b([A-Za-z][A-Za-z0-9_\-]+?)(\d+(?:\.\d+)?)\b'
+        for match in re.finditer(pattern3, composition_text, re.IGNORECASE):
+            component = match.group(1).strip().upper()
+            percentage = float(match.group(2))
+            # 성분명이 너무 짧으면 제외 (예: "Cotton6" 같은 경우 방지)
+            if len(component) >= 3:
+                all_matches.append({
+                    'start': match.start(),
+                    'end': match.end(),
+                    'component': component,
+                    'percentage': percentage,
+                    'pattern': 3
+                })
+        
+        # 2단계: 위치별로 정렬하고 겹치지 않는 매칭만 선택
+        all_matches.sort(key=lambda x: (x['start'], -x['end']))
+        
+        final_components = {}
+        used_positions = set()
+        
+        for match in all_matches:
+            # 현재 매칭이 이미 사용된 위치와 겹치는지 확인
+            overlap = False
+            for pos in range(match['start'], match['end']):
+                if pos in used_positions:
+                    overlap = True
+                    break
+            
+            if not overlap:
+                # 중복 방지 (같은 성분명이 이미 있으면 스킵)
+                if match['component'] not in final_components:
+                    final_components[match['component']] = match['percentage']
+                    # 사용된 위치 마킹
+                    for pos in range(match['start'], match['end']):
+                        used_positions.add(pos)
+        
+        # 추출된 성분이 없으면 빈 딕셔너리 반환
+        if not final_components:
+            return {}
+        
+        # 3단계: 등록된 성분명들 가져와서 각 성분이 등록되어 있는지 확인
         components = self.db.query(FabricComponent).all()
-        component_names = [comp.component_name_en.upper() for comp in components]
+        registered_component_names = [comp.component_name_en.upper() for comp in components]
         
-        # 모든 성분명을 하나의 패턴으로 결합
-        if component_names:
-            # 성분명들을 길이 순으로 정렬 (긴 것부터, 더 구체적인 매칭 우선)
-            sorted_names = sorted(component_names, key=len, reverse=True)
-            names_pattern = '|'.join([re.escape(name) for name in sorted_names])
-            
-            # "숫자% 성분명", "성분명 숫자%", "성분명숫자" 패턴으로 모든 쌍을 찾기
-            pattern = rf'(?:(\d+(?:\.\d+)?)\s*%?\s*({names_pattern})|({names_pattern})\s*(\d+(?:\.\d+)?)\s*%?|({names_pattern})(\d+(?:\.\d+)?)\s*%?)'
-            matches = re.findall(pattern, composition_text, re.IGNORECASE)
-            
-            for match in matches:
-                # match = (percentage1, component1, component2, percentage2, component3, percentage3)
-                if match[0] and match[1]:  # "숫자% 성분명" 형태
-                    percentage = float(match[0])
-                    component_name = match[1].upper()
-                    fabric_components[component_name] = percentage
-                elif match[2] and match[3]:  # "성분명 숫자%" 형태
-                    percentage = float(match[3])
-                    component_name = match[2].upper()
-                    fabric_components[component_name] = percentage
-                elif match[4] and match[5]:  # "성분명숫자" 형태 (Cotton60, Modal40 등)
-                    percentage = float(match[5])
-                    component_name = match[4].upper()
-                    fabric_components[component_name] = percentage
+        # 4단계: 추출된 모든 성분이 등록되어 있는지 검증
+        fabric_components = {}
+        for component_name, percentage in final_components.items():
+            if component_name not in registered_component_names:
+                # 미등록 성분이 발견되면 빈 딕셔너리 반환 (분류 중단)
+                return {}
+            fabric_components[component_name] = percentage
         
         return fabric_components
     
@@ -233,7 +303,7 @@ class HSClassificationService:
                 "product_name": str(row.get('제품명', '')),
                 "weaving_type": str(row.get('직조방식', '')).strip(),
                 "category": str(row.get('카테고리', '')),
-                "gender": str(row.get('성별', '')).strip(),
+                "gender": str(row.get('성별', '')).strip() if not pd.isna(row.get('성별')) else '',
                 "composition": str(row.get('상세 성분', '')),
                 "hs_code": "unknown",
                 "note": ""
@@ -266,14 +336,15 @@ class HSClassificationService:
                     continue
                 
                 # 4. 성별 검증
-                gender = result["gender"].lower()
-                if gender and gender not in ['men', 'women']:
+                gender = result["gender"].lower().strip()
+                # 빈값이나 'nan'인 경우 기본값으로 처리
+                if not gender or gender == 'nan':
+                    gender = "women"  # 기본값
+                # 유효하지 않은 값인 경우 오류 처리
+                elif gender not in ['men', 'women']:
                     result["note"] = "성별 정보 오류"
                     results.append(result)
                     continue
-                
-                if not gender:
-                    gender = "women"  # 기본값
                 
                 # 5. 성분 분석
                 if not result["composition"]:

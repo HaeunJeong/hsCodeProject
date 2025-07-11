@@ -5,7 +5,7 @@ echo "=== Git 기반 자동 배포 시작 ==="
 
 # 설정 변수
 PROJECT_DIR="/home/ubuntu/excel-project"
-GIT_REPO="https://github.com/your-username/excel-project.git"  # 실제 Git 저장소 URL로 변경
+GIT_REPO="https://github.com/HaeunJeong/hsCodeProject.git"  # 실제 Git 저장소 URL로 변경
 BRANCH="main"  # 또는 master
 
 # 1. 프로젝트 디렉토리 확인 및 이동

@@ -42,6 +42,46 @@ def update_standard_category(
         # 쉼표로 분리하여 각 단어의 앞뒤 공백 제거 후 다시 결합
         keywords_list = [keyword.strip() for keyword in keywords.split(',') if keyword.strip()]
         update_data['keywords'] = ', '.join(keywords_list)
+        
+        # 키워드 중복 체크
+        if keywords_list:
+            # 1. 같은 카테고리 내에서 중복 체크
+            current_keywords_upper = [kw.strip().upper() for kw in keywords_list]
+            
+            # 중복 키워드 찾기
+            seen = set()
+            duplicates_within_category = []
+            for kw in current_keywords_upper:
+                if kw in seen:
+                    duplicates_within_category.append(kw)
+                else:
+                    seen.add(kw)
+            
+            if duplicates_within_category:
+                duplicate_list = ', '.join(duplicates_within_category)
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"포함 단어가 중복됩니다. 중복 단어 : {duplicate_list}"
+                )
+            
+            # 2. 다른 카테고리들의 키워드와 중복 확인
+            other_categories = db.query(StandardCategory).filter(
+                StandardCategory.id != category_id,
+                StandardCategory.keywords.isnot(None)
+            ).all()
+            
+            for other_cat in other_categories:
+                if other_cat.keywords:
+                    other_keywords = [kw.strip().upper() for kw in other_cat.keywords.split(',') if kw.strip()]
+                    
+                    # 중복 키워드 찾기
+                    duplicates = set(current_keywords_upper) & set(other_keywords)
+                    if duplicates:
+                        duplicate_list = ', '.join(duplicates)
+                        raise HTTPException(
+                            status_code=400, 
+                            detail=f"다른 카테고리에 이미 등록된 단어가 있습니다. 중복 단어 : {duplicate_list}"
+                        )
     
     for key, value in update_data.items():
         setattr(db_category, key, value)

@@ -26,6 +26,7 @@ const StandardCategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<IStandardCategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<IStandardCategory | null>(null);
   const [formData, setFormData] = useState<IStandardCategoryUpdateData>({
@@ -56,6 +57,7 @@ const StandardCategoryManager: React.FC = () => {
       description: category.description || '',
       keywords: category.keywords || '',
     });
+    setDialogError(null);
     setOpenDialog(true);
   };
 
@@ -67,14 +69,14 @@ const StandardCategoryManager: React.FC = () => {
       description: '',
       keywords: '',
     });
-    setError(null);
+    setDialogError(null);
   };
 
   const handleSubmit = async () => {
     if (!selectedCategory) return;
 
     try {
-      setError(null);
+      setDialogError(null);
       
       await standardCategoryApi.updateCategory(selectedCategory.id, formData);
       setSuccess('카테고리가 수정되었습니다.');
@@ -82,8 +84,9 @@ const StandardCategoryManager: React.FC = () => {
       handleCloseDialog();
       await loadCategories();
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || '카테고리 수정에 실패했습니다.';
-      setError(errorMessage);
+      // apiWrapper를 통해 Error 객체로 throw되므로 error.message 사용
+      const errorMessage = error.message || '카테고리 수정에 실패했습니다.';
+      setDialogError(errorMessage);
       console.error('카테고리 수정 실패:', error);
     }
   };
@@ -158,6 +161,13 @@ const StandardCategoryManager: React.FC = () => {
           카테고리 정보 수정
         </DialogTitle>
         <DialogContent sx={{ p: 3 }}>
+          {/* 다이얼로그 내 에러 메시지 */}
+          {dialogError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {dialogError}
+            </Alert>
+          )}
+
           <Box sx={{ mt: 1 }}>
             {/* 카테고리 번호 */}
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

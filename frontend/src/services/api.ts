@@ -3,7 +3,9 @@ import { IApiResponse } from '../types/account';
 import { IAccount, IAccountCreateData, IAccountUpdateData, IStandardCategory, IStandardCategoryUpdateData } from '../types/account';
 import { IFabricComponent, IFabricComponentCreateData, IFabricComponentUpdateData, ICategoryInfo } from '../types/fabric';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// 환경에 따라 API Base URL 설정
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000');
 
 const api = axios.create({
     baseURL: API_BASE_URL,
