@@ -116,8 +116,8 @@ class HSClassificationService:
         parts = re.split(r'\b(RIB|LINING|ATTACHED)\b', composition_text, flags=re.IGNORECASE)
         composition_text = parts[0]
         
-        # 괄호 안의 라벨 제거 (SHELL), (MAIN) 등
-        composition_text = re.sub(r'\([^)]*\)', '', composition_text, flags=re.IGNORECASE)
+        # 괄호 안의 라벨 제거 (SHELL), (MAIN) 등 - 성분명에 포함된 괄호는 보존
+        composition_text = re.sub(r'\b\((?:SHELL|MAIN|RIB|LINING|ATTACHED)\d*\)', '', composition_text, flags=re.IGNORECASE)
         
         # SHELL1, SHELL2, MAIN1 등의 라벨 제거 (숫자가 붙은 경우도 포함)
         composition_text = re.sub(r'\b(SHELL|MAIN)\d*\b', '', composition_text, flags=re.IGNORECASE)
@@ -128,11 +128,81 @@ class HSClassificationService:
         # 1단계: 모든 가능한 매칭을 찾아서 위치별로 정렬
         all_matches = []
         
-        # 패턴 1: "숫자% 성분명" (예: "71% POLYESTER")
-        pattern1 = r'(\d+(?:\.\d+)?)\s*%\s+([A-Za-z][A-Za-z0-9_\-]+)'
+        # 먼저 구간 분리 방식으로 시도 (연결된 패턴에 최적화)
+        def parse_text_number_segments(text):
+            """텍스트를 문자 구간과 숫자 구간으로 순차 분리"""
+            segments = []
+            i = 0
+            
+            while i < len(text):
+                # 문자 구간 찾기 (영문자, 공백, 괄호 포함)
+                if text[i].isalpha():
+                    start = i
+                    while i < len(text) and (text[i].isalpha() or text[i].isspace() or text[i] in '()'):
+                        i += 1
+                    component = text[start:i].strip()
+                    if component:
+                        segments.append(('text', component))
+                
+                # 숫자 구간 찾기
+                elif text[i].isdigit():
+                    start = i
+                    while i < len(text) and (text[i].isdigit() or text[i] == '.'):
+                        i += 1
+                    number = text[start:i]
+                    if number:
+                        segments.append(('number', float(number)))
+                
+                else:
+                    i += 1  # 다른 문자는 건너뛰기
+            
+            return segments
+        
+        # 구간 분리 방식 시도
+        segments = parse_text_number_segments(composition_text)
+        segment_components = {}
+        
+        # (문자, 숫자) 쌍으로 구성된 성분들 추출
+        i = 0
+        while i < len(segments) - 1:
+            if segments[i][0] == 'text' and segments[i+1][0] == 'number':
+                component = segments[i][1].strip().upper()
+                percentage = segments[i+1][1]
+                
+                # 성분명이 유효한 경우만 추가
+                if len(component.replace(' ', '').replace('(', '').replace(')', '')) >= 3:
+                    segment_components[component] = percentage
+                
+                i += 2  # 다음 (문자, 숫자) 쌍으로
+            else:
+                i += 1
+        
+        # 구간 분리 방식으로 충분한 성분이 추출되면 바로 사용
+        if len(segment_components) >= 1:
+            # 등록된 성분명들과 매칭 확인
+            components = self.db.query(FabricComponent).all()
+            registered_components_map = {comp.component_name_en.upper(): comp.component_name_en for comp in components}
+            
+            all_registered = True
+            for component_name in segment_components.keys():
+                if component_name not in registered_components_map:
+                    all_registered = False
+                    break
+            
+            # 모든 성분이 등록되어 있으면 바로 반환
+            if all_registered:
+                result = {}
+                for component_name, percentage in segment_components.items():
+                    result[registered_components_map[component_name]] = percentage
+                return result
+        
+        # 패턴 1: "숫자% 성분명" (예: "71% POLYESTER", "50% fabric silk (very soft)")
+        pattern1 = r'(\d+(?:\.\d+)?)\s*%\s+([A-Za-z][A-Za-z0-9_\-\(\)\s]+?)(?=\s*\d|$|\s*[A-Z]+\s*\d)'
         for match in re.finditer(pattern1, composition_text, re.IGNORECASE):
             percentage = float(match.group(1))
             component = match.group(2).strip().upper()
+            # 성분명 끝에 있는 불필요한 문자 제거
+            component = re.sub(r'[^A-Za-z0-9_\-\(\)\s]+$', '', component).strip()
             all_matches.append({
                 'start': match.start(),
                 'end': match.end(),
@@ -141,11 +211,30 @@ class HSClassificationService:
                 'pattern': 1
             })
         
-        # 패턴 2: "성분명 숫자%" (예: "COTTON 67%")
-        pattern2 = r'\b([A-Za-z][A-Za-z0-9_\-]+)\s+(\d+(?:\.\d+)?)\s*%'
+        # 패턴 1-2: "숫자% 공백을 포함한 성분명" (예: "71% FABRIC COTTON")
+        pattern1_2 = r'(\d+(?:\.\d+)?)\s*%\s+([A-Za-z][A-Za-z0-9_\-\(\)\s]*(?:\s+[A-Za-z][A-Za-z0-9_\-\(\)\s]*){1,2})'
+        for match in re.finditer(pattern1_2, composition_text, re.IGNORECASE):
+            percentage = float(match.group(1))
+            component = match.group(2).strip().upper()
+            # 성분명 끝에 있는 불필요한 문자 제거
+            component = re.sub(r'[^A-Za-z0-9_\-\(\)\s]+$', '', component).strip()
+            # 이미 단일 단어 패턴으로 매칭된 것은 제외
+            if ' ' in component or '(' in component:
+                all_matches.append({
+                    'start': match.start(),
+                    'end': match.end(),
+                    'component': component,
+                    'percentage': percentage,
+                    'pattern': '1-2'
+                })
+        
+        # 패턴 2: "성분명 숫자%" (예: "COTTON 67%", "FABRIC SILK (VERY SOFT) 100%")
+        pattern2 = r'\b([A-Za-z][A-Za-z0-9_\-\(\)\s]+?)\s+(\d+(?:\.\d+)?)\s*%'
         for match in re.finditer(pattern2, composition_text, re.IGNORECASE):
             component = match.group(1).strip().upper()
             percentage = float(match.group(2))
+            # 성분명 끝에 있는 불필요한 문자 제거
+            component = re.sub(r'[^A-Za-z0-9_\-\(\)\s]+$', '', component).strip()
             all_matches.append({
                 'start': match.start(),
                 'end': match.end(),
@@ -154,13 +243,32 @@ class HSClassificationService:
                 'pattern': 2
             })
         
+        # 패턴 2-2: "공백을 포함한 성분명 숫자%" (예: "FABRIC COTTON 67%")
+        pattern2_2 = r'\b([A-Za-z][A-Za-z0-9_\-\(\)\s]*(?:\s+[A-Za-z][A-Za-z0-9_\-\(\)\s]*){1,2})\s+(\d+(?:\.\d+)?)\s*%'
+        for match in re.finditer(pattern2_2, composition_text, re.IGNORECASE):
+            component = match.group(1).strip().upper()
+            percentage = float(match.group(2))
+            # 성분명 끝에 있는 불필요한 문자 제거
+            component = re.sub(r'[^A-Za-z0-9_\-\(\)\s]+$', '', component).strip()
+            # 이미 단일 단어 패턴으로 매칭된 것은 제외
+            if ' ' in component or '(' in component:
+                all_matches.append({
+                    'start': match.start(),
+                    'end': match.end(),
+                    'component': component,
+                    'percentage': percentage,
+                    'pattern': '2-2'
+                })
+        
         # 패턴 3: "성분명숫자" (공백 없이, 예: "Cotton60", "Modal40")
-        pattern3 = r'\b([A-Za-z][A-Za-z0-9_\-]+?)(\d+(?:\.\d+)?)\b'
+        pattern3 = r'\b([A-Za-z][A-Za-z0-9_\-\(\)\s]+?)(\d+(?:\.\d+)?)\b'
         for match in re.finditer(pattern3, composition_text, re.IGNORECASE):
             component = match.group(1).strip().upper()
             percentage = float(match.group(2))
+            # 성분명 끝에 있는 불필요한 문자 제거
+            component = re.sub(r'[^A-Za-z0-9_\-\(\)\s]+$', '', component).strip()
             # 성분명이 너무 짧으면 제외 (예: "Cotton6" 같은 경우 방지)
-            if len(component) >= 3:
+            if len(component.replace(' ', '').replace('(', '').replace(')', '')) >= 3:
                 all_matches.append({
                     'start': match.start(),
                     'end': match.end(),
@@ -168,6 +276,25 @@ class HSClassificationService:
                     'percentage': percentage,
                     'pattern': 3
                 })
+        
+        # 패턴 3-2: "공백을 포함한 성분명숫자" (예: "FABRIC COTTON60")
+        pattern3_2 = r'([A-Za-z][A-Za-z_\-\(\)\s]*(?:\s+[A-Za-z][A-Za-z_\-\(\)\s]*){1,2})(\d+(?:\.\d+)?)'
+        for match in re.finditer(pattern3_2, composition_text, re.IGNORECASE):
+            component = match.group(1).strip().upper()
+            percentage = float(match.group(2))
+            # 성분명 끝에 있는 불필요한 문자 제거
+            component = re.sub(r'[^A-Za-z0-9_\-\(\)\s]+$', '', component).strip()
+            # 이미 단일 단어 패턴으로 매칭된 것은 제외하고, 공백이나 괄호가 있는 경우만 추가
+            if (' ' in component or '(' in component) and len(component.replace(' ', '').replace('(', '').replace(')', '')) >= 3:
+                all_matches.append({
+                    'start': match.start(),
+                    'end': match.end(),
+                    'component': component,
+                    'percentage': percentage,
+                    'pattern': '3-2'
+                })
+        
+
         
         # 2단계: 위치별로 정렬하고 겹치지 않는 매칭만 선택
         all_matches.sort(key=lambda x: (x['start'], -x['end']))
@@ -197,15 +324,35 @@ class HSClassificationService:
         
         # 3단계: 등록된 성분명들 가져와서 각 성분이 등록되어 있는지 확인
         components = self.db.query(FabricComponent).all()
-        registered_component_names = [comp.component_name_en.upper() for comp in components]
+        # 원본 성분명과 대문자 버전을 모두 보관
+        registered_components_map = {comp.component_name_en.upper(): comp.component_name_en for comp in components}
+        registered_component_names = list(registered_components_map.keys())
         
         # 4단계: 추출된 모든 성분이 등록되어 있는지 검증
         fabric_components = {}
         for component_name, percentage in final_components.items():
-            if component_name not in registered_component_names:
+            matched = False
+            matched_original_name = None
+            
+            # 4-1: 먼저 정확히 일치하는 성분명 찾기
+            if component_name in registered_component_names:
+                matched = True
+                matched_original_name = registered_components_map[component_name]
+            else:
+                # 4-2: 공백을 포함한 성분명 매칭 시도 (대소문자 구분 없이, 공백 위치까지 정확히 일치)
+                for registered_name in registered_component_names:
+                    # 등록된 성분명과 추출된 성분명이 대소문자 구분 없이 공백까지 정확히 일치하는지 확인
+                    if registered_name == component_name:
+                        matched = True
+                        matched_original_name = registered_components_map[registered_name]
+                        break
+            
+            if not matched:
                 # 미등록 성분이 발견되면 빈 딕셔너리 반환 (분류 중단)
                 return {}
-            fabric_components[component_name] = percentage
+            
+            # 매칭된 원본 성분명을 사용하여 저장 (데이터베이스 조회 시 정확한 매칭을 위해)
+            fabric_components[matched_original_name] = percentage
         
         return fabric_components
     
