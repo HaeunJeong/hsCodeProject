@@ -50,7 +50,7 @@ const StandardCategoryManager: React.FC = () => {
     loadCategories();
   }, []);
 
-  const handleRowDoubleClick = (category: IStandardCategory) => {
+  const handleRowClick = (category: IStandardCategory) => {
     setSelectedCategory(category);
     setFormData({
       category_name_ko: category.category_name_ko || '',
@@ -126,7 +126,7 @@ const StandardCategoryManager: React.FC = () => {
                 key={category.id} 
                 hover 
                 sx={{ cursor: 'pointer' }}
-                onDoubleClick={() => handleRowDoubleClick(category)}
+                onClick={() => handleRowClick(category)}
               >
                 <TableCell align="center" width={200}>{category.category_code}</TableCell>
                 <TableCell align="center" width={200}>{category.category_name_en}</TableCell>
@@ -267,9 +267,8 @@ const StandardCategoryManager: React.FC = () => {
               <Box sx={{ width: '75%' }}>
                 <TextField
                   fullWidth
-                  value={formData.keywords}
-                  onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-                  placeholder="관련 키워드를 입력하세요"
+                  value={formData.keywords ? formData.keywords.split(',').map(keyword => keyword.trim()).join('\n') : ''}
+                  onChange={(e) => setFormData({ ...formData, keywords: e.target.value.split('\n').map(line => line.trim()).join(', ') })}
                   multiline
                   rows={6}
                   variant="outlined"

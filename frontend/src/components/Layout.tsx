@@ -140,27 +140,29 @@ const Layout: React.FC<LayoutProps> = () => {
             />
           </Box>
         
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography
-                  component="span"
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    height: '24px',
-                    padding: '0 12px',
-                    fontSize: '0.8125rem',
-                    borderRadius: '16px',
-                    backgroundColor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
-                    color: role === 'admin' ? '#1976d2' : '#757575',
-                    border: '1px solid',
-                    borderColor: role === 'admin' ? '#bbdefb' : '#e0e0e0',
-                  }}
-                >
-                  {role === 'admin' ? '관리자' : '일반 사용자'}
-                </Typography>
+            {isAuthenticated && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      height: '24px',
+                      padding: '0 12px',
+                      fontSize: '0.8125rem',
+                      borderRadius: '16px',
+                      backgroundColor: role === 'admin' ? '#e3f2fd' : '#f5f5f5',
+                      color: role === 'admin' ? '#1976d2' : '#757575',
+                      border: '1px solid',
+                      borderColor: role === 'admin' ? '#bbdefb' : '#e0e0e0',
+                    }}
+                  >
+                    {role === 'admin' ? '관리자' : '고객사'}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
+            )}
         </Toolbar>
       </AppBar>
       <Drawer

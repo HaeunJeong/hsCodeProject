@@ -125,7 +125,7 @@ const HSClassification: React.FC = () => {
   };
 
   // HS Code 더블클릭 핸들러
-  const handleHSCodeDoubleClick = (rowIndex: number, currentValue: string) => {
+  const handleHSCodeClick = (rowIndex: number, currentValue: string) => {
     setEditingCell({ rowIndex, value: currentValue });
     setOriginalValue(currentValue);
     setEditedValue(currentValue);
@@ -622,7 +622,7 @@ const HSClassification: React.FC = () => {
                               backgroundColor: row.hs_code === 'unknown' ? '#ffcdd2' : '#c8e6c8'
                             }
                           }}
-                          onDoubleClick={() => handleHSCodeDoubleClick(index, row.hs_code)}
+                          onClick={() => handleHSCodeClick(index, row.hs_code)}
                           title="더블클릭하여 수정"
                         >
                           {row.hs_code}

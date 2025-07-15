@@ -39,7 +39,7 @@ def create_account(
 @router.get("/", response_model=List[AccountResponse])
 def get_accounts(
     skip: int = 0, 
-    limit: int = 100, 
+    limit: int = 1000, 
     db: Session = Depends(get_db),
     current_account: Account = Depends(get_current_account)
 ):
@@ -51,7 +51,7 @@ def get_accounts(
             detail="관리자만 계정 목록을 조회할 수 있습니다"
         )
     
-    accounts = db.query(Account).offset(skip).limit(limit).all()
+    accounts = db.query(Account).order_by(Account.createdAt.desc()).offset(skip).limit(limit).all()
     return accounts
 
 @router.get("/{account_id}", response_model=AccountResponse)
