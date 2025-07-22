@@ -1,0 +1,57 @@
+{
+  "MAN_MADE": {
+    "name": "인조 섬유(man_made)",
+    "minor_categories": {
+      "SYNTHETIC": "합성 섬유(synthetic)",
+      "ARTIFICIAL": "재생 반합성 섬유(artificial)"
+    }
+  },
+  "COTTON": {
+    "name": "면(cotton)",
+    "minor_categories": {
+      "COTTON": "면(cotton)",
+      "DENIM": "데님(denim)"
+    }
+  },
+  "SILK": {
+    "name": "견(silk)",
+    "minor_categories": {
+      "SILK": "견(silk)"
+    }
+  },
+  "ANIMAL": {
+    "name": "동물성 섬유(animal)",
+    "minor_categories": {
+      "WOOL": "양모(wool)",
+      "CASHMERE": "캐시미어(cashmere)",
+      "ANIMALHAIR": "동물의 부드러운 털(animalhair)"
+    }
+  },
+  "OTHER_GROUP": {
+    "name": "기타(other_group)",
+    "minor_categories": {
+      "OTHER_TEXTILE": "기타 섬유(other_textile)",
+      "OTHER_MATERIAL": "기타 소재(other_material)",
+      "OTHER_5903": "5903 섬유(other_5903)"
+    }
+  },
+  "LEATHER": {
+    "name": "가죽(leather)",
+    "minor_categories": {
+      "COW": "소가죽(cow)",
+      "LAMB": "양가죽(lamb)",
+      "GOAT": "염소가죽(goat)",
+      "PIG": "돼지가죽(pig)",
+      "SNAKE": "뱀가죽(snake)",
+      "CROCODILE": "악어가죽(crocodile)",
+      "LIZARD": "도마뱀가죽(lizard)"
+    }
+  },
+  "SPECIAL_LEATHER": {
+    "name": "특수가죽(special_leather)",
+    "minor_categories": {
+      "PATENT": "페이턴트 레더(patent)",
+      "COMPOSITION": "콤퍼지션 레더(composition)"
+    }
+  }
+}

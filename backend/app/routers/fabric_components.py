@@ -12,6 +12,10 @@ from ..schemas.fabric_component import (
 from app.core.database import get_db
 from ..api.auth import get_current_account
 from ..models import Account
+from ..utils.fabric_category_loader import (
+    get_major_categories_from_json,
+    get_minor_categories_from_json
+)
 
 router = APIRouter()
 
@@ -47,41 +51,21 @@ def get_fabric_components(
 
 @router.get("/major-categories", response_model=List[CategoryInfo])
 def get_major_categories(
-    db: Session = Depends(get_db),
     current_account: Account = Depends(get_current_account)
 ):
-    """대분류 목록 조회"""
-    categories = db.query(
-        distinct(FabricComponent.major_category_code).label('code'),
-        FabricComponent.major_category_name.label('name')
-    ).group_by(
-        FabricComponent.major_category_code, 
-        FabricComponent.major_category_name
-    ).all()
-    
-    return [{"code": cat.code, "name": cat.name} for cat in categories]
+    """대분류 목록 조회 (JSON 파일 기반)"""
+    categories = get_major_categories_from_json()
+    return [{"code": cat["major_category_code"], "name": cat["major_category_name"]} for cat in categories]
 
 @router.get("/minor-categories", response_model=List[CategoryInfo])
 def get_minor_categories(
     major_category_code: Optional[str] = Query(None, description="대분류 코드"),
-    db: Session = Depends(get_db),
     current_account: Account = Depends(get_current_account)
 ):
-    """중분류 목록 조회"""
-    query = db.query(
-        distinct(FabricComponent.minor_category_code).label('code'),
-        FabricComponent.minor_category_name.label('name')
-    )
-    
-    if major_category_code and major_category_code != "all":
-        query = query.filter(FabricComponent.major_category_code == major_category_code)
-    
-    categories = query.group_by(
-        FabricComponent.minor_category_code,
-        FabricComponent.minor_category_name
-    ).all()
-    
-    return [{"code": cat.code, "name": cat.name} for cat in categories]
+    """중분류 목록 조회 (JSON 파일 기반)"""
+    # major_category_code로 필터링 가능
+    categories = get_minor_categories_from_json(major_category_code)
+    return [{"code": cat["minor_category_code"], "name": cat["minor_category_name"]} for cat in categories]
 
 @router.post("/", response_model=FabricComponentResponse)
 def create_fabric_component(

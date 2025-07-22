@@ -5,6 +5,11 @@ from sqlalchemy.orm import Session
 from ..models.hs_code_rule import HSCodeRule
 from ..models.standard_category import StandardCategory
 from ..models.fabric_component import FabricComponent
+from ..constants.fabric_parsing_constants import (
+    get_secondary_parts_pattern,
+    get_bracket_labels_pattern,
+    get_main_labels_pattern
+)
 
 class HSClassificationService:
     def __init__(self, db: Session):
@@ -91,11 +96,13 @@ class HSClassificationService:
         # 표준 카테고리들과 매칭
         categories = self.db.query(StandardCategory).order_by(StandardCategory.id).all()
         
+        matched_categories = []
+        
         # 완전 일치만 허용 (앞뒤 공백은 제거하되 중간 공백은 정확히 일치)
         for cat in categories:
             # 1. category_name_en과 완전 일치 확인
             if cat.category_name_en and cat.category_name_en.lower() == category_text:
-                return cat.category_name_en.lower()
+                matched_categories.append(cat.category_name_en.lower())
             
             # 2. keywords와 완전 일치 확인
             if cat.keywords:
@@ -103,24 +110,35 @@ class HSClassificationService:
                 for keyword in keywords:
                     keyword = keyword.strip()  # 키워드 자체는 CSV에서 공백 제거 필요
                     if keyword and keyword == category_text:
-                        return cat.category_name_en.lower()
+                        matched_categories.append(cat.category_name_en.lower())
         
-        return None
+        # 중복 제거
+        matched_categories = list(set(matched_categories))
+        
+        if len(matched_categories) == 1:
+            return matched_categories[0]
+        elif len(matched_categories) > 1:
+            return "multiple_matches"  # 여러 개 매칭됨을 나타내는 특별한 값
+        else:
+            return None
     
     def parse_fabric_composition(self, composition_text: str) -> Dict[str, float]:
         """성분 텍스트 파싱하여 성분별 함량 계산"""
         if not composition_text:
             return {}
         
-        # 부수적인 파트 제거 (RIB, LINING, ATTACHED 이후 텍스트 제거)
-        parts = re.split(r'\b(RIB|LINING|ATTACHED)\b', composition_text, flags=re.IGNORECASE)
+        # 부수적인 파트 제거 (상수 파일에서 관리)
+        secondary_pattern = get_secondary_parts_pattern()
+        parts = re.split(rf'\b({secondary_pattern})\b', composition_text, flags=re.IGNORECASE)
         composition_text = parts[0]
         
         # 괄호 안의 라벨 제거 (SHELL), (MAIN) 등 - 성분명에 포함된 괄호는 보존
-        composition_text = re.sub(r'\b\((?:SHELL|MAIN|RIB|LINING|ATTACHED)\d*\)', '', composition_text, flags=re.IGNORECASE)
+        bracket_pattern = get_bracket_labels_pattern()
+        composition_text = re.sub(rf'\b\((?:{bracket_pattern})\d*\)', '', composition_text, flags=re.IGNORECASE)
         
         # SHELL1, SHELL2, MAIN1 등의 라벨 제거 (숫자가 붙은 경우도 포함)
-        composition_text = re.sub(r'\b(SHELL|MAIN)\d*\b', '', composition_text, flags=re.IGNORECASE)
+        main_pattern = get_main_labels_pattern()
+        composition_text = re.sub(rf'\b({main_pattern})\d*\b', '', composition_text, flags=re.IGNORECASE)
         
         # 불필요한 공백 및 개행 정리
         composition_text = re.sub(r'\s+', ' ', composition_text).strip()
@@ -402,8 +420,8 @@ class HSClassificationService:
             HSCodeRule.weaving_type == weaving_type.lower(),
             HSCodeRule.standard_category == standard_category.lower(),
             HSCodeRule.gender.in_([gender.lower(), "any"]),
-            HSCodeRule.major_category == major_category.lower(),
-            HSCodeRule.minor_category == minor_category.lower(),
+            HSCodeRule.major_category.in_([major_category.lower(), "any"]),
+            HSCodeRule.minor_category.in_([minor_category.lower(), "any"]),
             HSCodeRule.is_active == True
         ).first()
         
@@ -415,8 +433,8 @@ class HSClassificationService:
             HSCodeRule.weaving_type == weaving_type.lower(),
             HSCodeRule.standard_category == standard_category.lower(),
             HSCodeRule.gender.in_([gender.lower(), "any"]),
-            HSCodeRule.major_category == major_category.lower(),
-            HSCodeRule.minor_category == "other",
+            HSCodeRule.major_category.in_([major_category.lower(), "any"]),
+            HSCodeRule.minor_category.in_(["other", "any"]),
             HSCodeRule.is_active == True
         ).first()
         
@@ -428,8 +446,8 @@ class HSClassificationService:
             HSCodeRule.weaving_type == weaving_type.lower(),
             HSCodeRule.standard_category == standard_category.lower(),
             HSCodeRule.gender.in_([gender.lower(), "any"]),
-            HSCodeRule.major_category == "other",
-            HSCodeRule.minor_category == "other",
+            HSCodeRule.major_category.in_(["other", "any"]),
+            HSCodeRule.minor_category.in_(["other", "any"]),
             HSCodeRule.is_active == True
         ).first()
         
@@ -465,7 +483,7 @@ class HSClassificationService:
                 
                 # 2. 직조방식 검증
                 weaving_type = result["weaving_type"].lower()
-                if weaving_type not in ['knit', 'woven']:
+                if weaving_type not in ['knit', 'woven', 'leather']:
                     result["note"] = "지원하지 않는 직조 방식"
                     results.append(result)
                     continue
@@ -479,6 +497,10 @@ class HSClassificationService:
                 standard_category = self.find_standard_category(result["category"])
                 if not standard_category:
                     result["note"] = "등록되지 않은 카테고리"
+                    results.append(result)
+                    continue
+                elif standard_category == "multiple_matches":
+                    result["note"] = "정확한 카테고리 판단 불가능"
                     results.append(result)
                     continue
                 

@@ -142,6 +142,10 @@ const FabricComponentManager: React.FC = () => {
   // handleReset 함수 제거
 
   const handleOpenDialog = async (component?: IFabricComponent) => {
+    // 다이얼로그 열 때마다 메시지 초기화
+    setError(null);
+    setSuccess('');
+    
     if (component) {
       setFormData({
         major_category_code: component.major_category_code,
@@ -263,9 +267,9 @@ const FabricComponentManager: React.FC = () => {
     
     try {
       await fabricComponentApi.deleteComponent(id);
-      setSuccess('성분이 삭제되었습니다.');
+      setOpenDialog(false); // 다이얼로그 먼저 닫기
       await loadComponents();
-      setOpenDialog(false); // 다이얼로그 닫기
+      setSuccess('성분이 삭제되었습니다.'); // 다이얼로그 닫힌 후 성공 메시지 표시
       
       // 검색 조건이 있다면 다시 검색
       if (searchFilters.major_category_code !== 'all' || 
